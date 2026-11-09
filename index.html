@@ -54,14 +54,14 @@ nav button:disabled{opacity:.35}
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:5000;padding:20px}
 .overlay.show{display:flex}
 .panel{background:#fff;color:#222;border-radius:22px;width:100%;max-width:380px;max-height:85vh;overflow:auto;padding:20px;box-shadow:0 10px 40px rgba(0,0,0,.4)}
-.panel h2{font-size:20px;margin-bottom:12px}
-.panel p,.panel li{font-size:15px;line-height:1.6;color:#444}
+.panel h2{font-size:23px;margin-bottom:12px}
+.panel p,.panel li{font-size:17px;line-height:1.6;color:#333}
 .panel ul{padding-left:20px;margin:6px 0 10px}
 .panel .row{display:flex;gap:8px;margin-top:16px}
-.panel button{flex:1;padding:11px;border-radius:10px;border:none;font-size:15px;font-weight:600;background:#e9ecef;color:#222;font-family:inherit;cursor:pointer}
+.panel button{flex:1;padding:12px;border-radius:10px;border:none;font-size:17px;font-weight:600;background:#e9ecef;color:#222;font-family:inherit;cursor:pointer}
 .panel button.primary{background:#3a9e3f;color:#fff}
 .panel input[type=number]{width:100%;padding:10px;font-size:18px;border:1.5px solid #ccc;border-radius:10px;margin-top:6px}
-.menu-item{display:flex;justify-content:space-between;align-items:center;padding:13px 4px;border-bottom:1px solid #eee;font-size:16px;cursor:pointer}
+.menu-item{display:flex;justify-content:space-between;align-items:center;padding:14px 4px;border-bottom:1px solid #eee;font-size:19px;cursor:pointer}
 .menu-item:last-child{border-bottom:none}
 .switch{width:46px;height:28px;border-radius:14px;background:#ccc;position:relative;transition:.2s;flex-shrink:0}
 .switch::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
@@ -69,24 +69,24 @@ nav button:disabled{opacity:.35}
 .statgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .statgrid div{background:#eef7ef;border-radius:10px;padding:12px;text-align:center}
 .statgrid b{display:block;font-size:24px;color:#2f8f37}
-.statgrid span{font-size:13px;color:#666}
+.statgrid span{font-size:15px;color:#555}
 .win h2{text-align:center;font-size:26px}
 .win .big{text-align:center;font-size:48px}
 .tabs{display:flex;gap:6px;margin-bottom:10px}
-.tabs button{flex:1;padding:8px;border-radius:999px;border:none;background:#eef0f2;font-size:14px;font-weight:600;font-family:inherit}
+.tabs button{flex:1;padding:9px 2px;border-radius:999px;border:none;background:#eef0f2;font-size:16px;font-weight:600;font-family:inherit}
 .tabs button.on{background:#3a9e3f;color:#fff}
-.hero{display:flex;align-items:center;gap:10px;padding:10px 6px;border-bottom:1px solid #f0f0f0;font-size:16px}
+.hero{display:flex;align-items:center;gap:10px;padding:11px 6px;border-bottom:1px solid #f0f0f0;font-size:19px}
 .hero .rk{width:30px;text-align:center;font-size:20px;font-weight:700;color:#999}
 .hero .nm{flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hero .vl{font-weight:700;color:#2f8f37;font-variant-numeric:tabular-nums}
 .hero.me{background:#fff8d6;border-radius:10px}
 .empty{color:#888;text-align:center;padding:20px 0}
 .namebox{display:flex;gap:8px;margin-top:12px}
-.namebox input{flex:1;padding:10px;font-size:16px;border:1.5px solid #ccc;border-radius:10px;min-width:0}
+.namebox input{flex:1;padding:11px;font-size:19px;border:1.5px solid #ccc;border-radius:10px;min-width:0}
 .namebox button{flex:0 0 auto;padding:10px 14px}
 #codeBox{width:100%;margin-top:10px;padding:10px;font-size:14px;border:1.5px dashed #bbb;border-radius:10px;resize:none;display:none;font-family:inherit}
-.muted{font-size:13px!important;color:#888!important;margin-top:8px}
-#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);background:rgba(20,20,20,.88);color:#fff;padding:10px 16px;border-radius:20px;font-size:14px;opacity:0;transition:.25s;pointer-events:none;z-index:6000;white-space:nowrap}
+.muted{font-size:15px!important;color:#666!important;margin-top:8px}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);background:rgba(20,20,20,.88);color:#fff;padding:11px 18px;border-radius:22px;font-size:16px;opacity:0;transition:.25s;pointer-events:none;z-index:6000;white-space:nowrap}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 </head>
@@ -397,7 +397,7 @@ function suitIcon(su){return `<svg viewBox="0 0 100 100"><use href="#p${su}" fil
 function layout(){
   const b=board.getBoundingClientRect();
   const W=b.width,H=b.height;
-  const gap=Math.max(2.5,Math.min(8,W*0.008));
+  const gap=Math.max(4,Math.min(10,W*0.014));
   let cw=(W-gap*7-4)/8;
   cw=Math.min(cw,(H*0.9)/1.4/3.5,90);
   const side=(W-(cw*8+gap*7))/2;
