@@ -16,11 +16,11 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden;overscroll-behavior:none;touch-action:none}
 body{background:#3a9e3f;font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;color:#fff;display:flex;flex-direction:column;position:fixed;top:0;left:0;right:0;bottom:0;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
-header{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:calc(6px + env(safe-area-inset-top)) calc(10px + env(safe-area-inset-right)) 4px calc(10px + env(safe-area-inset-left));font-size:16px;font-variant-numeric:tabular-nums;max-width:760px;width:100%;margin:0 auto}
-header .title{font-weight:700;font-size:19px;letter-spacing:1px}
-header .title small{font-weight:400;opacity:.75;font-size:14px;margin-left:4px}
+header{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:calc(6px + env(safe-area-inset-top)) calc(10px + env(safe-area-inset-right)) 4px calc(10px + env(safe-area-inset-left));font-size:18px;flex-wrap:wrap;row-gap:2px;font-variant-numeric:tabular-nums;max-width:760px;width:100%;margin:0 auto}
+header .title{font-weight:700;font-size:22px;letter-spacing:1px}
+header .title small{font-weight:400;opacity:.85;font-size:16px;margin-left:4px}
 header .stats{display:flex;gap:6px}
-header .stats span{font-weight:600;font-size:15px}
+header .stats span{font-weight:700;font-size:17px}
 #board{position:relative;flex:1;width:100%;max-width:760px;margin:0 auto;touch-action:none}
 .slot{position:absolute;left:0;top:0;width:var(--cw);border-radius:7px}
 .slot.cell,.slot.found{height:var(--ch);border:none;background:rgba(255,255,255,.14);box-shadow:inset 0 0 6px rgba(0,0,0,.18);border-radius:6px;display:flex;align-items:center;justify-content:center}
@@ -28,13 +28,13 @@ header .stats span{font-weight:600;font-size:15px}
 .slot.col::before{content:"";position:absolute;left:0;top:0;right:0;height:var(--ch);border-radius:6px;border:none;background:rgba(255,255,255,.08)}
 .card{position:absolute;left:0;top:0;width:var(--cw);height:var(--ch);border-radius:6px;background:#fff;border:1px solid #b9b9b9;box-shadow:0 1px 3px rgba(0,0,0,.35);color:#111;font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;transition:transform .2s ease,box-shadow .15s;will-change:transform;overflow:hidden}
 .card.red{color:#e8141c}
-.card .tl{position:absolute;z-index:2;left:calc(var(--cw)*.06);right:calc(var(--cw)*.06);top:calc(var(--cw)*.03);display:flex;align-items:center;justify-content:space-between;font-weight:600;line-height:1;font-size:calc(var(--cw)*.46);letter-spacing:-1px}
-.card .tl svg{width:calc(var(--cw)*.32);height:calc(var(--cw)*.32)}
-.card .tl.ten{font-size:calc(var(--cw)*.42);letter-spacing:-2.5px}
+.card .tl{position:absolute;z-index:2;left:calc(var(--cw)*.06);right:calc(var(--cw)*.06);top:calc(var(--cw)*.03);display:flex;align-items:center;justify-content:space-between;font-weight:700;line-height:1;font-size:calc(var(--cw)*.5);letter-spacing:-1px}
+.card .tl svg{width:calc(var(--cw)*.34);height:calc(var(--cw)*.34)}
+.card .tl.ten{font-size:calc(var(--cw)*.45);letter-spacing:-3px}
 .card .tl.ten svg{width:calc(var(--cw)*.28);height:calc(var(--cw)*.28)}
 .card .art{position:absolute;left:18%;right:18%;bottom:7%;height:46%}
 .card .art svg{width:100%;height:100%}
-.card .court{position:absolute;left:5%;right:5%;top:33%;bottom:3%;overflow:hidden;border-radius:2px}
+.card .court{position:absolute;left:5%;right:5%;top:35%;bottom:3%;overflow:hidden;border-radius:2px}
 .card .court img{position:absolute;left:-19.4%;top:0;width:138.9%;margin-top:-17.1%;pointer-events:none;-webkit-user-drag:none}
 .card .fl{position:absolute;left:0;right:0;bottom:6%;text-align:center;font-family:Georgia,"Times New Roman",serif;font-weight:700;font-size:calc(var(--cw)*.62);line-height:1}
 .card .fl svg{width:calc(var(--cw)*.36);height:calc(var(--cw)*.36);vertical-align:baseline}
@@ -45,48 +45,48 @@ header .stats span{font-weight:600;font-size:15px}
 .nope{animation:nope .35s}
 @keyframes nope{50%{filter:brightness(.75) sepia(.6) hue-rotate(-30deg) saturate(3)}}
 nav{display:flex;justify-content:space-around;flex-shrink:0;position:relative;z-index:3000;padding:8px 4px max(10px, env(safe-area-inset-bottom));background:rgba(0,0,0,.25);width:100%}
-nav button{background:none;border:none;color:#fff;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:56px;padding:4px 6px;border-radius:10px;font-family:inherit;cursor:pointer}
+nav button{background:none;border:none;color:#fff;font-size:16px;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:56px;padding:4px 6px;border-radius:10px;font-family:inherit;cursor:pointer}
 nav button{font-weight:600}
-nav button svg{width:44px;height:44px;padding:9px;border-radius:14px;box-shadow:0 3px 0 rgba(0,0,0,.25);transition:transform .1s}
+nav button svg{width:48px;height:48px;padding:10px;border-radius:14px;box-shadow:0 3px 0 rgba(0,0,0,.25);transition:transform .1s}
 nav button:active svg{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.25)}
 #bNew svg{background:#ffb020}#bRestart svg{background:#ff6b9a}#bUndo svg{background:#6b7bff}#bHint svg{background:#20c4ec}#bMenu svg{background:#a066ff}
 nav button:disabled{opacity:.35}
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:5000;padding:20px}
 .overlay.show{display:flex}
-.panel{background:#fff;color:#222;border-radius:22px;width:100%;max-width:380px;max-height:85vh;overflow:auto;padding:20px;box-shadow:0 10px 40px rgba(0,0,0,.4)}
-.panel h2{font-size:23px;margin-bottom:12px}
-.panel p,.panel li{font-size:17px;line-height:1.6;color:#333}
+.panel{background:#fff;color:#222;border-radius:22px;width:100%;max-width:440px;max-height:85vh;overflow:auto;padding:20px;box-shadow:0 10px 40px rgba(0,0,0,.4)}
+.panel h2{font-size:25px;margin-bottom:12px}
+.panel p,.panel li{font-size:19px;line-height:1.6;color:#333}
 .panel ul{padding-left:20px;margin:6px 0 10px}
 .panel .row{display:flex;gap:8px;margin-top:16px}
-.panel button{flex:1;padding:12px;border-radius:10px;border:none;font-size:17px;font-weight:600;background:#e9ecef;color:#222;font-family:inherit;cursor:pointer}
+.panel button{flex:1;padding:13px 8px;border-radius:12px;border:none;font-size:19px;font-weight:600;background:#e9ecef;color:#222;font-family:inherit;cursor:pointer}
 .panel button.primary{background:#3a9e3f;color:#fff}
-.panel input[type=number]{width:100%;padding:10px;font-size:18px;border:1.5px solid #ccc;border-radius:10px;margin-top:6px}
-.menu-item{display:flex;justify-content:space-between;align-items:center;padding:14px 4px;border-bottom:1px solid #eee;font-size:19px;cursor:pointer}
+.panel input[type=number]{width:100%;padding:12px;font-size:22px;border:1.5px solid #ccc;border-radius:10px;margin-top:6px}
+.menu-item{display:flex;justify-content:space-between;align-items:center;padding:15px 4px;border-bottom:1px solid #eee;font-size:21px;cursor:pointer}
 .menu-item:last-child{border-bottom:none}
-.switch{width:46px;height:28px;border-radius:14px;background:#ccc;position:relative;transition:.2s;flex-shrink:0}
-.switch::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
-.switch.on{background:#3a9e3f}.switch.on::after{left:21px}
+.switch{width:54px;height:32px;border-radius:16px;background:#ccc;position:relative;transition:.2s;flex-shrink:0}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.switch.on{background:#3a9e3f}.switch.on::after{left:25px}
 .statgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .statgrid div{background:#eef7ef;border-radius:10px;padding:12px;text-align:center}
-.statgrid b{display:block;font-size:24px;color:#2f8f37}
-.statgrid span{font-size:15px;color:#555}
-.win h2{text-align:center;font-size:26px}
+.statgrid b{display:block;font-size:29px;color:#2f8f37}
+.statgrid span{font-size:17px;color:#555}
+.win h2{text-align:center;font-size:30px}
 .win .big{text-align:center;font-size:48px}
 .tabs{display:flex;gap:6px;margin-bottom:10px}
-.tabs button{flex:1;padding:9px 2px;border-radius:999px;border:none;background:#eef0f2;font-size:16px;font-weight:600;font-family:inherit}
+.tabs button{flex:1;padding:10px 2px;border-radius:999px;border:none;background:#eef0f2;font-size:17px;font-weight:600;font-family:inherit}
 .tabs button.on{background:#3a9e3f;color:#fff}
-.hero{display:flex;align-items:center;gap:10px;padding:11px 6px;border-bottom:1px solid #f0f0f0;font-size:19px}
-.hero .rk{width:30px;text-align:center;font-size:20px;font-weight:700;color:#999}
+.hero{display:flex;align-items:center;gap:10px;padding:12px 6px;border-bottom:1px solid #f0f0f0;font-size:21px}
+.hero .rk{width:34px;text-align:center;font-size:24px;font-weight:700;color:#999}
 .hero .nm{flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hero .vl{font-weight:700;color:#2f8f37;font-variant-numeric:tabular-nums}
 .hero.me{background:#fff8d6;border-radius:10px}
 .empty{color:#888;text-align:center;padding:20px 0}
 .namebox{display:flex;gap:8px;margin-top:12px}
-.namebox input{flex:1;padding:11px;font-size:19px;border:1.5px solid #ccc;border-radius:10px;min-width:0}
+.namebox input{flex:1;padding:12px;font-size:21px;border:1.5px solid #ccc;border-radius:10px;min-width:0}
 .namebox button{flex:0 0 auto;padding:10px 14px}
 #codeBox{width:100%;margin-top:10px;padding:10px;font-size:14px;border:1.5px dashed #bbb;border-radius:10px;resize:none;display:none;font-family:inherit}
-.muted{font-size:15px!important;color:#666!important;margin-top:8px}
-#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);background:rgba(20,20,20,.88);color:#fff;padding:11px 18px;border-radius:22px;font-size:16px;opacity:0;transition:.25s;pointer-events:none;z-index:6000;white-space:nowrap}
+.muted{font-size:16px!important;color:#666!important;margin-top:8px}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);background:rgba(20,20,20,.88);color:#fff;padding:12px 20px;border-radius:24px;font-size:18px;opacity:0;transition:.25s;pointer-events:none;z-index:6000;white-space:nowrap}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 </head>
@@ -113,6 +113,7 @@ nav button:disabled{opacity:.35}
   <div class="menu-item" id="miRules">遊戲規則<span>›</span></div>
   <div class="menu-item" id="miTap">點一下自動移動<div class="switch" id="swTap"></div></div>
   <div class="row"><button data-close>關閉</button></div>
+  <p class="muted" style="text-align:center">新接龍 版本 <b id="verLabel"></b></p>
 </div></div>
 
 <div class="overlay" id="ovDeal"><div class="panel">
@@ -143,6 +144,7 @@ nav button:disabled{opacity:.35}
     <li><b>點一下</b>：自動移到最適合的位置（可在選單改成「點選來源、再點目的地」）。</li>
     <li>可以安全收走的牌會自動收到收牌區。</li>
   </ul>
+  <p class="muted">版本 v1.4（2026-11-09）</p>
   <p class="muted">J、Q、K 圖案：Vectorized Playing Cards 1.3 © 2011 Chris Aguilar，依 LGPL 3.0 授權使用（授權全文：cards/LICENSE-LGPL3.txt）。</p>
   <div class="row"><button class="primary" data-close>知道了</button></div>
 </div></div>
@@ -210,6 +212,7 @@ if (FIREBASE_CONFIG) {
 <script>
 (function(){
 'use strict';
+const APP_VERSION='v1.4', APP_DATE='2026-11-09';
 const SUITS=['♣','♦','♥','♠'];
 const RANKS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 const rank=id=>id>>2, suit=id=>id&3, red=id=>(id&3)===1||(id&3)===2;
@@ -411,7 +414,7 @@ function layout(){
 }
 function pos(el,x,y){el.style.transform=`translate(${x}px,${y}px)`}
 const X=i=>L.side+i*(L.cw+L.gap);
-function colOffset(n){const base=L.ch*0.4;if(n<=1)return base;return Math.min(base,(L.H-L.y0-L.ch-6)/(n-1))}
+function colOffset(n){const base=L.ch*0.43;if(n<=1)return base;return Math.min(base,(L.H-L.y0-L.ch-6)/(n-1))}
 const P=[];
 function render(){
   const selIds=sel!==null&&loc(sel)?cardsAt(loc(sel)):[];
@@ -675,7 +678,7 @@ function setPlayer(n){n=cleanName(n);if(!n){toast('請輸入名字');return fals
 $('miHeroes').onclick=()=>{hide('ovMenu');heroTab='wins';showHeroes()};
 $('miPlayer').onclick=()=>{
   hide('ovMenu');$('inPlayer').value=player;
-  $('playerChips').innerHTML=Object.keys(heroes).map(n=>`<button style="flex:0 0 auto;padding:6px 12px;border-radius:999px;font-size:14px" data-n="${esc(n)}">${esc(n)}</button>`).join('');
+  $('playerChips').innerHTML=Object.keys(heroes).map(n=>`<button style="flex:0 0 auto;padding:8px 14px;border-radius:999px;font-size:18px" data-n="${esc(n)}">${esc(n)}</button>`).join('');
   $('playerChips').querySelectorAll('button').forEach(b=>b.onclick=()=>{setPlayer(b.dataset.n);hide('ovPlayer');toast('目前玩家：'+player)});
   show('ovPlayer');
 };
@@ -720,6 +723,7 @@ setInterval(()=>{if(S&&S.started&&!S.won&&!document.hidden){S.elapsed++;$('tTime
 
 window.addEventListener('resize',()=>{layout();render()});
 
+$('verLabel').textContent=APP_VERSION+'（'+APP_DATE+'）';
 /* ---------- start ---------- */
 buildDom();layout();
 const saved=load('fc_game',null);
