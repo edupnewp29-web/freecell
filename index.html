@@ -149,9 +149,10 @@ nav button:disabled{opacity:.35}
 
 <div class="overlay" id="ovHeroes"><div class="panel">
   <h2>🏆 英雄榜</h2>
-  <div class="tabs"><button data-k="wins" class="on">勝場</button><button data-k="bestTime">最快</button><button data-k="fewestMoves">最少步數</button></div>
+  <div class="tabs"><button data-k="wins" class="on">勝場</button><button data-k="bestTime">最快</button><button data-k="fewestMoves">最少步數</button><button data-k="deal">本局</button></div>
+  <p class="muted" id="heroMode" style="margin:0 0 6px"></p>
   <div id="heroList"></div>
-  <p class="muted">英雄榜記錄在這支手機上。和朋友比賽：選同一個局號，過關後把「成績碼」貼到群組。</p>
+  <p class="muted" id="heroNote"></p>
   <div class="row"><button class="primary" data-close>關閉</button></div>
 </div></div>
 
@@ -175,6 +176,28 @@ nav button:disabled{opacity:.35}
 </div></div>
 
 <div id="toast"></div>
+<script type="module">
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDqijZqb7Q0vKj2_mcdlqB6VjIGbphni3M",
+  authDomain: "freecell-bd3f5.firebaseapp.com",
+  projectId: "freecell-bd3f5",
+  storageBucket: "freecell-bd3f5.firebasestorage.app",
+  messagingSenderId: "177991561204",
+  appId: "1:177991561204:web:b822ebf796dedb9e7313a1"
+};
+if (FIREBASE_CONFIG) {
+  try {
+    const V = '10.12.2';
+    const app = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-app.js`);
+    const auth = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-auth.js`);
+    const fs = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-firestore.js`);
+    const a = app.initializeApp(FIREBASE_CONFIG);
+    const cred = await auth.signInAnonymously(auth.getAuth(a));
+    window.__online = { uid: cred.user.uid, fs, db: fs.getFirestore(a) };
+    window.dispatchEvent(new Event('online-ready'));
+  } catch (e) { console.warn('online hero board unavailable', e); }
+}
+</script>
 <svg width="0" height="0" style="position:absolute">
  <defs>
   <path id="p2" d="M50 90C20 68 5 52 5 33 5 18 16 7 30 7c9 0 16 5 20 12 4-7 11-12 20-12 14 0 25 11 25 26 0 19-15 35-45 57z"/>
@@ -519,7 +542,7 @@ function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show')
 function show(id){$(id).classList.add('show')}
 function hide(id){$(id).classList.remove('show')}
 document.querySelectorAll('.overlay').forEach(o=>{
-  o.addEventListener('click',e=>{if(e.target===o||e.target.hasAttribute('data-close'))o.classList.remove('show')});
+  o.addEventListener('click',e=>{if(e.target===o||e.target.hasAttribute('data-close')){o.classList.remove('show');if(o.id==='ovHeroes'&&typeof stopHeroes==='function')stopHeroes()}});
 });
 function abandonCheck(){if(S&&S.counted&&!S.won){stats.streak=0;save('fc_stats',stats)}}
 function randomDeal(){let d;do{d=1+Math.floor(Math.random()*32000)}while(d===11982);return d}
@@ -595,15 +618,56 @@ function rankList(k){
   return arr;
 }
 function fmtHero(k,h){return k==='wins'?h.wins+' 勝':k==='bestTime'?fmt(h.bestTime):h.fewestMoves+' 步'}
-let heroTab='wins';
+let heroTab='wins', heroUnsub=null;
+const onl=()=>window.__online||null;
+const pidOf=name=>onl().uid+'_'+name.replace(/[\/.#\[\]]/g,'_');
+async function submitOnline(name){
+  const o=onl();if(!o)return 'offline';
+  const {fs,db}=o, el=Math.max(1,S.elapsed), mv=Math.max(1,S.moves), sc=score(), deal=S.deal;
+  const ref=fs.doc(db,'players',pidOf(name));
+  const snap=await fs.getDoc(ref);const old=snap.exists()?snap.data():null;
+  await fs.setDoc(ref,{uid:o.uid,name,wins:(old?old.wins:0)+1,
+    bestTime:old?Math.min(old.bestTime,el):el,fewestMoves:old?Math.min(old.fewestMoves,mv):mv,
+    bestScore:Math.max(old?old.bestScore||0:0,sc),updatedAt:fs.serverTimestamp()});
+  const rref=fs.doc(db,'deals',String(deal),'runs',pidOf(name));
+  const rs=await fs.getDoc(rref);
+  if(!rs.exists()||el<rs.data().time)await fs.setDoc(rref,{uid:o.uid,name,time:el,moves:mv,at:fs.serverTimestamp()});
+  return 'ok';
+}
+function heroRow(i,name,val,me){
+  const medal=['🥇','🥈','🥉'];
+  return `<div class="hero${me?' me':''}"><div class="rk">${medal[i]||i+1}</div><div class="nm">${esc(name)}</div><div class="vl">${val}</div></div>`;
+}
+function stopHeroes(){if(heroUnsub){heroUnsub();heroUnsub=null}}
+function showLocalHeroes(){
+  $('heroMode').textContent='📱 本機紀錄';
+  $('heroNote').textContent='目前連不上線上英雄榜，先顯示這支手機上的紀錄。';
+  if(heroTab==='deal'){$('heroList').innerHTML='<div class="empty">「本局」排行需要連上線上英雄榜</div>';return}
+  const arr=rankList(heroTab);
+  $('heroList').innerHTML=arr.length?arr.slice(0,30).map(([n,h],i)=>heroRow(i,n,fmtHero(heroTab,h),n===player)).join('')
+    :'<div class="empty">還沒有人上榜，過關後登錄名字就會出現在這裡</div>';
+}
 function showHeroes(){
   document.querySelectorAll('#ovHeroes .tabs button').forEach(b=>b.classList.toggle('on',b.dataset.k===heroTab));
-  const arr=rankList(heroTab);
-  const medal=['🥇','🥈','🥉'];
-  $('heroList').innerHTML=arr.length?arr.slice(0,30).map(([n,h],i)=>
-    `<div class="hero${n===player?' me':''}"><div class="rk">${medal[i]||i+1}</div><div class="nm">${esc(n)}</div><div class="vl">${fmtHero(heroTab,h)}</div></div>`).join('')
-    :'<div class="empty">還沒有人上榜，過關後登錄名字就會出現在這裡</div>';
-  show('ovHeroes');
+  show('ovHeroes');stopHeroes();
+  const o=onl();
+  if(!o){showLocalHeroes();return}
+  const {fs,db}=o;
+  $('heroMode').textContent=heroTab==='deal'?`🌐 第 #${S.deal} 局排行`:'🌐 線上英雄榜（即時更新）';
+  $('heroNote').textContent='過關並登錄名字就會上榜。和朋友比同一局：選單 → 選擇局號。';
+  $('heroList').innerHTML='<div class="empty">載入中…</div>';
+  const q=heroTab==='deal'
+    ?fs.query(fs.collection(db,'deals',String(S.deal),'runs'),fs.orderBy('time','asc'),fs.limit(50))
+    :fs.query(fs.collection(db,'players'),fs.orderBy(heroTab,heroTab==='wins'?'desc':'asc'),fs.limit(50));
+  const tab=heroTab;
+  heroUnsub=fs.onSnapshot(q,snap=>{
+    if(tab!==heroTab)return;
+    const rows=snap.docs.map(d=>d.data());
+    $('heroList').innerHTML=rows.length?rows.map((r,i)=>{
+      const val=tab==='deal'?`${fmt(r.time)}・${r.moves} 步`:tab==='wins'?r.wins+' 勝':tab==='bestTime'?fmt(r.bestTime):r.fewestMoves+' 步';
+      return heroRow(i,r.name,val,r.uid===o.uid);
+    }).join(''):`<div class="empty">${tab==='deal'?'這一局還沒有人過關，搶第一！':'還沒有人上榜，搶第一！'}</div>`;
+  },err=>{console.warn(err);showLocalHeroes()});
 }
 document.querySelectorAll('#ovHeroes .tabs button').forEach(b=>b.onclick=()=>{heroTab=b.dataset.k;showHeroes()});
 function updatePlayerLabel(){$('playerName').textContent=(player||'未設定')+' ›'}
@@ -625,14 +689,22 @@ function winRankText(name){
   const arr=rankList('wins');const i=arr.findIndex(([n])=>n===name);
   return i>=0?`${name} 英雄榜第 ${i+1} 名（${arr[i][1].wins} 勝）`:'';
 }
+function registerWin(){
+  recordWin(player);$('winName').style.display='none';
+  if(!onl()){$('winRank').textContent=winRankText(player);return}
+  if(S.onlineSent)return;S.onlineSent=true;
+  $('winRank').textContent='登錄線上英雄榜中…';
+  submitOnline(player).then(()=>{$('winRank').textContent=`🌐 ${player} 已登上線上英雄榜！`})
+    .catch(e=>{console.warn(e);S.onlineSent=false;$('winRank').textContent='線上登錄失敗，已先存在本機'});
+}
 function prepareWin(){
   $('codeBox').style.display='none';
-  if(player){recordWin(player);$('winName').style.display='none';$('winRank').textContent=winRankText(player)}
+  if(player)registerWin();
   else{$('winName').style.display='flex';$('inWinName').value='';$('winRank').textContent=''}
 }
 $('bWinSave').onclick=()=>{
   if(!setPlayer($('inWinName').value))return;
-  recordWin(player);$('winName').style.display='none';$('winRank').textContent=winRankText(player);
+  registerWin();
 };
 $('inWinName').addEventListener('keydown',e=>{if(e.key==='Enter')$('bWinSave').click()});
 $('bCopyCode').onclick=async()=>{
@@ -640,7 +712,7 @@ $('bCopyCode').onclick=async()=>{
   try{await navigator.clipboard.writeText(txt);toast('已複製，貼到 LINE 群組吧！')}
   catch(e){box.style.display='block';box.focus();box.select();toast('請長按上面的文字複製')}
 };
-$('bWinHeroes').onclick=()=>{hide('ovWin');heroTab='wins';showHeroes()};
+$('bWinHeroes').onclick=()=>{hide('ovWin');heroTab=onl()?'deal':'wins';showHeroes()};
 updatePlayerLabel();
 
 /* timer */
