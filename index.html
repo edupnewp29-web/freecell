@@ -19,6 +19,7 @@ body{background:#3a9e3f;font-family:-apple-system,BlinkMacSystemFont,"PingFang T
 header{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:calc(6px + env(safe-area-inset-top)) calc(10px + env(safe-area-inset-right)) 4px calc(10px + env(safe-area-inset-left));font-size:18px;flex-wrap:wrap;row-gap:2px;font-variant-numeric:tabular-nums;max-width:760px;width:100%;margin:0 auto}
 header .title{font-weight:700;font-size:22px;letter-spacing:1px}
 header .title small{font-weight:400;opacity:.85;font-size:16px;margin-left:4px}
+#onlineBadge{margin-left:8px;background:rgba(0,0,0,.25);padding:3px 10px;border-radius:999px;font-size:16px;font-weight:700;cursor:pointer;vertical-align:middle}
 header .stats{display:flex;gap:6px}
 header .stats span{font-weight:700;font-size:17px}
 #board{position:relative;flex:1;width:100%;max-width:760px;margin:0 auto;touch-action:none}
@@ -92,7 +93,7 @@ nav button:disabled{opacity:.35}
 </head>
 <body>
 <header>
-  <div class="title">新接龍<small id="dealNo"></small></div>
+  <div class="title">新接龍<small id="dealNo"></small><span id="onlineBadge" style="display:none"></span></div>
   <div class="stats"><span id="tTime">0:00</span><span id="tMoves">步數 0</span><span id="tScore">分數 0</span></div>
 </header>
 <div id="board"></div>
@@ -108,6 +109,7 @@ nav button:disabled{opacity:.35}
   <h2>選單</h2>
   <div class="menu-item" id="miDeal">選擇局號<span>›</span></div>
   <div class="menu-item" id="miHeroes">🏆 英雄榜<span>›</span></div>
+  <div class="menu-item" id="miOnline">🟢 線上玩家<span id="miOnlineN" style="color:#2f8f37;font-weight:600">›</span></div>
   <div class="menu-item" id="miPlayer">目前玩家<span id="playerName" style="color:#2f8f37;font-weight:600">未設定 ›</span></div>
   <div class="menu-item" id="miStats">統計<span>›</span></div>
   <div class="menu-item" id="miRules">遊戲規則<span>›</span></div>
@@ -155,6 +157,13 @@ nav button:disabled{opacity:.35}
   <p class="muted" id="heroMode" style="margin:0 0 6px"></p>
   <div id="heroList"></div>
   <p class="muted" id="heroNote"></p>
+  <div class="row"><button class="primary" data-close>關閉</button></div>
+</div></div>
+
+<div class="overlay" id="ovOnline"><div class="panel">
+  <h2>🟢 線上玩家</h2>
+  <div id="onlineList"></div>
+  <p class="muted">顯示最近 2 分鐘內有打開遊戲的人。名字要在「選單 → 目前玩家」設定，沒設定的會顯示「訪客」。</p>
   <div class="row"><button class="primary" data-close>關閉</button></div>
 </div></div>
 
@@ -212,7 +221,7 @@ if (FIREBASE_CONFIG) {
 <script>
 (function(){
 'use strict';
-const APP_VERSION='v1.4', APP_DATE='2026-11-09';
+const APP_VERSION='v1.5', APP_DATE='2026-11-09';
 const SUITS=['♣','♦','♥','♠'];
 const RANKS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 const rank=id=>id>>2, suit=id=>id&3, red=id=>(id&3)===1||(id&3)===2;
@@ -362,6 +371,7 @@ function checkWin(){
     $('winText').innerHTML=`第 #${S.deal} 局<br>時間 ${fmt(S.elapsed)}　步數 ${S.moves}　分數 ${score()}`;
     prepareWin();
     show('ovWin');
+    if(typeof presenceWrite==='function')presenceWrite(false);
   },500);
 }
 
@@ -553,6 +563,7 @@ function newGame(deal){
   abandonCheck();
   S=fresh(deal||randomDeal());undoStack=[];sel=null;busy=false;
   hide('ovWin');persist();dealAnimation();
+  if(typeof presenceWrite==='function')presenceWrite(false);
 }
 $('bNew').onclick=()=>{if(!busy)newGame()};
 $('bRestart').onclick=()=>{if(busy)return;if(!undoStack.length){toast('這局還沒開始');return}
@@ -674,7 +685,7 @@ function showHeroes(){
 }
 document.querySelectorAll('#ovHeroes .tabs button').forEach(b=>b.onclick=()=>{heroTab=b.dataset.k;showHeroes()});
 function updatePlayerLabel(){$('playerName').textContent=(player||'未設定')+' ›'}
-function setPlayer(n){n=cleanName(n);if(!n){toast('請輸入名字');return false}player=n;save('fc_player',player);updatePlayerLabel();return true}
+function setPlayer(n){n=cleanName(n);if(!n){toast('請輸入名字');return false}player=n;save('fc_player',player);updatePlayerLabel();if(typeof presenceWrite==='function')presenceWrite(false);return true}
 $('miHeroes').onclick=()=>{hide('ovMenu');heroTab='wins';showHeroes()};
 $('miPlayer').onclick=()=>{
   hide('ovMenu');$('inPlayer').value=player;
@@ -724,6 +735,48 @@ setInterval(()=>{if(S&&S.started&&!S.won&&!document.hidden){S.elapsed++;$('tTime
 window.addEventListener('resize',()=>{layout();render()});
 
 $('verLabel').textContent=APP_VERSION+'（'+APP_DATE+'）';
+/* ---------- online presence ---------- */
+let presenceRows=[], presenceStarted=false;
+const ONLINE_MS=120000;
+function presenceWrite(away){
+  const o=onl();if(!o)return;
+  o.fs.setDoc(o.fs.doc(o.db,'presence',o.uid),{uid:o.uid,name:player||'',deal:S.deal,moves:S.moves,won:!!S.won,away:!!away,lastSeen:o.fs.serverTimestamp()}).catch(e=>console.warn('presence',e));
+}
+function onlineNow(){
+  const now=Date.now();
+  return presenceRows.filter(r=>!r.away&&r.t&&now-r.t<ONLINE_MS).sort((a,b)=>b.t-a.t);
+}
+function renderOnline(){
+  const o=onl();if(!o)return;
+  const list=onlineNow();
+  const b=$('onlineBadge');b.style.display='';b.textContent='🟢 '+list.length;
+  $('miOnlineN').textContent=list.length+' 人 ›';
+  if($('ovOnline').classList.contains('show')){
+    $('onlineList').innerHTML=list.length?list.map(r=>{
+      const me=r.uid===o.uid, sec=Math.round((Date.now()-r.t)/1000);
+      const ago=sec<60?'剛剛':Math.floor(sec/60)+' 分鐘前';
+      const what=r.won?`剛過關 第 #${r.deal} 局 🎉`:`正在玩第 #${r.deal} 局`;
+      return `<div class="hero${me?' me':''}"><div class="rk">🟢</div><div class="nm">${esc(r.name||'訪客')}${me?'（你）':''}<div style="font-size:15px;color:#777;font-weight:400">${what}</div></div><div class="vl" style="font-size:15px;color:#999;font-weight:400">${ago}</div></div>`;
+    }).join(''):'<div class="empty">目前只有你在線上</div>';
+  }
+}
+function startPresence(){
+  const o=onl();if(!o||presenceStarted)return;presenceStarted=true;
+  presenceWrite(false);
+  setInterval(()=>{if(!document.hidden)presenceWrite(false)},45000);
+  document.addEventListener('visibilitychange',()=>presenceWrite(document.hidden));
+  window.addEventListener('pagehide',()=>presenceWrite(true));
+  const q=o.fs.query(o.fs.collection(o.db,'presence'),o.fs.orderBy('lastSeen','desc'),o.fs.limit(100));
+  o.fs.onSnapshot(q,snap=>{
+    presenceRows=snap.docs.map(d=>{const r=d.data({serverTimestamps:'estimate'});return{...r,t:r.lastSeen&&r.lastSeen.toMillis?r.lastSeen.toMillis():0}});
+    renderOnline();
+  },e=>console.warn('presence listen',e));
+  setInterval(renderOnline,20000);
+}
+function showOnline(){show('ovOnline');renderOnline()}
+$('onlineBadge').onclick=showOnline;
+$('miOnline').onclick=()=>{hide('ovMenu');if(!onl()){toast('目前連不上網路');return}showOnline()};
+
 /* ---------- start ---------- */
 buildDom();layout();
 const saved=load('fc_game',null);
@@ -734,6 +787,7 @@ if(saved&&saved.S&&saved.S.cols&&!saved.S.won){
   dealAnimation();
   if(!load('fc_seen',false)){save('fc_seen',true);setTimeout(()=>show('ovRules'),900)}
 }
+if(onl())startPresence();else window.addEventListener('online-ready',startPresence,{once:true});
 window.__fc={get S(){return S},plan,apply,findHint,smart,dealCols,loc};
 })();
 </script>
