@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="新接龍">
+<meta name="theme-color" content="#3a9e3f">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<title>新接龍 FreeCell</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;overscroll-behavior:none;touch-action:none}
+body{background:#3a9e3f;font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;color:#fff;display:flex;flex-direction:column;height:100vh;height:100dvh;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+header{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:calc(6px + env(safe-area-inset-top)) calc(10px + env(safe-area-inset-right)) 4px calc(10px + env(safe-area-inset-left));font-size:16px;font-variant-numeric:tabular-nums;max-width:760px;width:100%;margin:0 auto}
+header .title{font-weight:700;font-size:19px;letter-spacing:1px}
+header .title small{font-weight:400;opacity:.75;font-size:14px;margin-left:4px}
+header .stats{display:flex;gap:6px}
+header .stats span{font-weight:600;font-size:15px}
+#board{position:relative;flex:1;width:100%;max-width:760px;margin:0 auto;touch-action:none}
+.slot{position:absolute;left:0;top:0;width:var(--cw);border-radius:7px}
+.slot.cell,.slot.found{height:var(--ch);border:none;background:rgba(255,255,255,.14);box-shadow:inset 0 0 6px rgba(0,0,0,.18);border-radius:6px;display:flex;align-items:center;justify-content:center}
+.slot.found{color:rgba(255,255,255,.3);font-weight:700;font-size:calc(var(--cw)*.75);font-family:Arial,Helvetica,sans-serif}
+.slot.col::before{content:"";position:absolute;left:0;top:0;right:0;height:var(--ch);border-radius:6px;border:none;background:rgba(255,255,255,.08)}
+.card{position:absolute;left:0;top:0;width:var(--cw);height:var(--ch);border-radius:6px;background:#fff;border:1px solid #b9b9b9;box-shadow:0 1px 3px rgba(0,0,0,.35);color:#111;font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;transition:transform .2s ease,box-shadow .15s;will-change:transform;overflow:hidden}
+.card.red{color:#e8141c}
+.card .tl{position:absolute;z-index:2;left:calc(var(--cw)*.06);right:calc(var(--cw)*.06);top:calc(var(--cw)*.03);display:flex;align-items:center;justify-content:space-between;font-weight:600;line-height:1;font-size:calc(var(--cw)*.46);letter-spacing:-1px}
+.card .tl svg{width:calc(var(--cw)*.32);height:calc(var(--cw)*.32)}
+.card .tl.ten{font-size:calc(var(--cw)*.42);letter-spacing:-2.5px}
+.card .tl.ten svg{width:calc(var(--cw)*.28);height:calc(var(--cw)*.28)}
+.card .art{position:absolute;left:18%;right:18%;bottom:7%;height:46%}
+.card .art svg{width:100%;height:100%}
+.card .court{position:absolute;left:5%;right:5%;top:33%;bottom:3%;overflow:hidden;border-radius:2px}
+.card .court img{position:absolute;left:-19.4%;top:0;width:138.9%;margin-top:-17.1%;pointer-events:none;-webkit-user-drag:none}
+.card .fl{position:absolute;left:0;right:0;bottom:6%;text-align:center;font-family:Georgia,"Times New Roman",serif;font-weight:700;font-size:calc(var(--cw)*.62);line-height:1}
+.card .fl svg{width:calc(var(--cw)*.36);height:calc(var(--cw)*.36);vertical-align:baseline}
+.card.sel{box-shadow:0 0 0 3px #ffd400,0 2px 8px rgba(0,0,0,.4)}
+.card.drag{transition:none!important;box-shadow:0 8px 18px rgba(0,0,0,.45)}
+.hint{animation:hint .45s ease 4 alternate}
+@keyframes hint{to{box-shadow:0 0 0 4px #4de1ff,0 0 18px 4px #9ef0ff}}
+.nope{animation:nope .35s}
+@keyframes nope{50%{filter:brightness(.75) sepia(.6) hue-rotate(-30deg) saturate(3)}}
+nav{display:flex;justify-content:space-around;padding:8px 4px calc(10px + env(safe-area-inset-bottom));background:rgba(0,0,0,.25);width:100%}
+nav button{background:none;border:none;color:#fff;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:56px;padding:4px 6px;border-radius:10px;font-family:inherit;cursor:pointer}
+nav button{font-weight:600}
+nav button svg{width:44px;height:44px;padding:9px;border-radius:14px;box-shadow:0 3px 0 rgba(0,0,0,.25);transition:transform .1s}
+nav button:active svg{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.25)}
+#bNew svg{background:#ffb020}#bRestart svg{background:#ff6b9a}#bUndo svg{background:#6b7bff}#bHint svg{background:#20c4ec}#bMenu svg{background:#a066ff}
+nav button:disabled{opacity:.35}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:5000;padding:20px}
+.overlay.show{display:flex}
+.panel{background:#fff;color:#222;border-radius:22px;width:100%;max-width:380px;max-height:85vh;overflow:auto;padding:20px;box-shadow:0 10px 40px rgba(0,0,0,.4)}
+.panel h2{font-size:20px;margin-bottom:12px}
+.panel p,.panel li{font-size:15px;line-height:1.6;color:#444}
+.panel ul{padding-left:20px;margin:6px 0 10px}
+.panel .row{display:flex;gap:8px;margin-top:16px}
+.panel button{flex:1;padding:11px;border-radius:10px;border:none;font-size:15px;font-weight:600;background:#e9ecef;color:#222;font-family:inherit;cursor:pointer}
+.panel button.primary{background:#3a9e3f;color:#fff}
+.panel input[type=number]{width:100%;padding:10px;font-size:18px;border:1.5px solid #ccc;border-radius:10px;margin-top:6px}
+.menu-item{display:flex;justify-content:space-between;align-items:center;padding:13px 4px;border-bottom:1px solid #eee;font-size:16px;cursor:pointer}
+.menu-item:last-child{border-bottom:none}
+.switch{width:46px;height:28px;border-radius:14px;background:#ccc;position:relative;transition:.2s;flex-shrink:0}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.switch.on{background:#3a9e3f}.switch.on::after{left:21px}
+.statgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.statgrid div{background:#eef7ef;border-radius:10px;padding:12px;text-align:center}
+.statgrid b{display:block;font-size:24px;color:#2f8f37}
+.statgrid span{font-size:13px;color:#666}
+.win h2{text-align:center;font-size:26px}
+.win .big{text-align:center;font-size:48px}
+.tabs{display:flex;gap:6px;margin-bottom:10px}
+.tabs button{flex:1;padding:8px;border-radius:999px;border:none;background:#eef0f2;font-size:14px;font-weight:600;font-family:inherit}
+.tabs button.on{background:#3a9e3f;color:#fff}
+.hero{display:flex;align-items:center;gap:10px;padding:10px 6px;border-bottom:1px solid #f0f0f0;font-size:16px}
+.hero .rk{width:30px;text-align:center;font-size:20px;font-weight:700;color:#999}
+.hero .nm{flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hero .vl{font-weight:700;color:#2f8f37;font-variant-numeric:tabular-nums}
+.hero.me{background:#fff8d6;border-radius:10px}
+.empty{color:#888;text-align:center;padding:20px 0}
+.namebox{display:flex;gap:8px;margin-top:12px}
+.namebox input{flex:1;padding:10px;font-size:16px;border:1.5px solid #ccc;border-radius:10px;min-width:0}
+.namebox button{flex:0 0 auto;padding:10px 14px}
+#codeBox{width:100%;margin-top:10px;padding:10px;font-size:14px;border:1.5px dashed #bbb;border-radius:10px;resize:none;display:none;font-family:inherit}
+.muted{font-size:13px!important;color:#888!important;margin-top:8px}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);background:rgba(20,20,20,.88);color:#fff;padding:10px 16px;border-radius:20px;font-size:14px;opacity:0;transition:.25s;pointer-events:none;z-index:6000;white-space:nowrap}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<header>
+  <div class="title">新接龍<small id="dealNo"></small></div>
+  <div class="stats"><span id="tTime">0:00</span><span id="tMoves">步數 0</span><span id="tScore">分數 0</span></div>
+</header>
+<div id="board"></div>
+<nav>
+  <button id="bNew"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="12" height="16" rx="2"/><path d="M20 7v12a2 2 0 0 1-2 2H8"/><path d="M10 8v6M7 11h6"/></svg>新局</button>
+  <button id="bRestart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>重來</button>
+  <button id="bUndo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>復原</button>
+  <button id="bHint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z"/></svg>提示</button>
+  <button id="bMenu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>選單</button>
+</nav>
+
+<div class="overlay" id="ovMenu"><div class="panel">
+  <h2>選單</h2>
+  <div class="menu-item" id="miDeal">選擇局號<span>›</span></div>
+  <div class="menu-item" id="miHeroes">🏆 英雄榜<span>›</span></div>
+  <div class="menu-item" id="miPlayer">目前玩家<span id="playerName" style="color:#2f8f37;font-weight:600">未設定 ›</span></div>
+  <div class="menu-item" id="miStats">統計<span>›</span></div>
+  <div class="menu-item" id="miRules">遊戲規則<span>›</span></div>
+  <div class="menu-item" id="miTap">點一下自動移動<div class="switch" id="swTap"></div></div>
+  <div class="row"><button data-close>關閉</button></div>
+</div></div>
+
+<div class="overlay" id="ovDeal"><div class="panel">
+  <h2>選擇局號</h2>
+  <p>輸入 1 – 32000。同一個局號發出來的牌永遠一樣，可以和朋友比賽同一局。除了 #11982 以外，每一局都有解。</p>
+  <input type="number" id="inDeal" min="1" max="32000" inputmode="numeric">
+  <div class="row"><button data-close>取消</button><button class="primary" id="bGoDeal">開始</button></div>
+</div></div>
+
+<div class="overlay" id="ovStats"><div class="panel">
+  <h2>統計</h2>
+  <div class="statgrid" id="statGrid"></div>
+  <div class="row"><button id="bResetStats">清除統計</button><button class="primary" data-close>關閉</button></div>
+</div></div>
+
+<div class="overlay" id="ovRules"><div class="panel">
+  <h2>遊戲規則</h2>
+  <p><b>目標：</b>把 52 張牌依花色從 A 排到 K，全部收到右上角的 4 個收牌區。</p>
+  <ul>
+    <li><b>左上 4 格是暫存格</b>，每格放 1 張任意的牌。</li>
+    <li>下方 8 欄的牌，可以疊到<b>顏色相反、點數大 1</b> 的牌上（例如黑 7 疊在紅 8 上）。</li>
+    <li>空欄可以放任何牌。</li>
+    <li>一次可以移動一整串排好的牌，張數上限取決於空暫存格和空欄的數量。</li>
+  </ul>
+  <p><b>操作：</b></p>
+  <ul>
+    <li><b>拖拉</b>：把牌拖到想放的位置。</li>
+    <li><b>點一下</b>：自動移到最適合的位置（可在選單改成「點選來源、再點目的地」）。</li>
+    <li>可以安全收走的牌會自動收到收牌區。</li>
+  </ul>
+  <p class="muted">J、Q、K 圖案：Vectorized Playing Cards 1.3 © 2011 Chris Aguilar，依 LGPL 3.0 授權使用（授權全文：cards/LICENSE-LGPL3.txt）。</p>
+  <div class="row"><button class="primary" data-close>知道了</button></div>
+</div></div>
+
+<div class="overlay" id="ovHeroes"><div class="panel">
+  <h2>🏆 英雄榜</h2>
+  <div class="tabs"><button data-k="wins" class="on">勝場</button><button data-k="bestTime">最快</button><button data-k="fewestMoves">最少步數</button></div>
+  <div id="heroList"></div>
+  <p class="muted">英雄榜記錄在這支手機上。和朋友比賽：選同一個局號，過關後把「成績碼」貼到群組。</p>
+  <div class="row"><button class="primary" data-close>關閉</button></div>
+</div></div>
+
+<div class="overlay" id="ovPlayer"><div class="panel">
+  <h2>目前玩家</h2>
+  <p>輸入名字，之後過關的成績會記在這個名字下。同一支手機可以有好幾位玩家。</p>
+  <div class="namebox"><input id="inPlayer" maxlength="12" placeholder="你的名字"><button class="primary" id="bSavePlayer">確定</button></div>
+  <div id="playerChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px"></div>
+  <div class="row"><button data-close>關閉</button></div>
+</div></div>
+
+<div class="overlay" id="ovWin"><div class="panel win">
+  <div class="big">🎉</div>
+  <h2>過關！</h2>
+  <p style="text-align:center" id="winText"></p>
+  <p style="text-align:center;font-weight:600;color:#2f8f37;margin-top:6px" id="winRank"></p>
+  <div class="namebox" id="winName"><input id="inWinName" maxlength="12" placeholder="輸入名字登上英雄榜"><button class="primary" id="bWinSave">登錄</button></div>
+  <textarea id="codeBox" rows="3" readonly></textarea>
+  <div class="row"><button id="bCopyCode">📋 複製成績碼</button><button id="bWinHeroes">🏆 英雄榜</button></div>
+  <div class="row" style="margin-top:8px"><button class="primary" id="bWinNew">再來一局</button></div>
+</div></div>
+
+<div id="toast"></div>
+<svg width="0" height="0" style="position:absolute">
+ <defs>
+  <path id="p2" d="M50 90C20 68 5 52 5 33 5 18 16 7 30 7c9 0 16 5 20 12 4-7 11-12 20-12 14 0 25 11 25 26 0 19-15 35-45 57z"/>
+  <path id="p1" d="M50 4 89 50 50 96 11 50z" stroke-linejoin="round" stroke-width="8"/>
+  <g id="p0"><circle cx="50" cy="29" r="21"/><circle cx="27" cy="58" r="21"/><circle cx="73" cy="58" r="21"/><path d="M44 58 38 94h24l-6-36z"/></g>
+  <path id="p3" d="M50 5C40 26 7 40 7 62c0 14 10 23 23 23 8 0 14-4 17-9l-6 19h18l-6-19c3 5 9 9 17 9 13 0 23-9 23-23C93 40 60 26 50 5z"/>
+ </defs>
+</svg>
+
+<script>
+(function(){
+'use strict';
+const SUITS=['♣','♦','♥','♠'];
+const RANKS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+const rank=id=>id>>2, suit=id=>id&3, red=id=>(id&3)===1||(id&3)===2;
+const $=id=>document.getElementById(id);
+const board=$('board');
+
+/* ---------- storage ---------- */
+function load(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+let stats=load('fc_stats',{played:0,won:0,streak:0,bestStreak:0,bestTime:null,fewestMoves:null});
+let settings=load('fc_settings',{tapAuto:true});
+
+/* ---------- deal (classic numbered deals, 1-32000) ---------- */
+function dealCols(seed){
+  let s=seed;
+  const rnd=()=>{s=(s*214013+2531011)%2147483648;return Math.floor(s/65536)};
+  const cards=[];for(let i=51;i>=0;i--)cards.push(i);
+  for(let i=0;i<52;i++){const j=51-rnd()%(52-i);const t=cards[i];cards[i]=cards[j];cards[j]=t}
+  const cols=[[],[],[],[],[],[],[],[]];
+  cards.forEach((c,k)=>cols[k%8].push(c));
+  return cols;
+}
+
+/* ---------- state ---------- */
+let S=null, undoStack=[], sel=null, busy=false;
+function fresh(deal){return{deal,cols:dealCols(deal),cells:[null,null,null,null],found:[[],[],[],[]],moves:0,elapsed:0,started:false,won:false,counted:false}}
+function snap(){return JSON.stringify({cols:S.cols,cells:S.cells,found:S.found,moves:S.moves})}
+function persist(){save('fc_game',{S,undo:undoStack.slice(-200)})}
+
+function loc(id){
+  for(let i=0;i<8;i++){const k=S.cols[i].indexOf(id);if(k>=0)return{t:'col',i,k}}
+  const c=S.cells.indexOf(id);if(c>=0)return{t:'cell',i:c};
+  for(let i=0;i<4;i++)if(S.found[i].includes(id))return{t:'found',i};
+  return null;
+}
+const stack=(a,b)=>rank(a)===rank(b)-1&&red(a)!==red(b);
+function validRun(a){for(let i=1;i<a.length;i++)if(!stack(a[i],a[i-1]))return false;return true}
+function cardsAt(l){return l.t==='col'?S.cols[l.i].slice(l.k):l.t==='cell'?[S.cells[l.i]]:null}
+function movable(id){const l=loc(id);if(!l||l.t==='found')return false;return validRun(cardsAt(l))}
+function maxMove(toEmpty){
+  const fc=S.cells.filter(c=>c===null).length;
+  const ec=S.cols.filter(c=>!c.length).length-(toEmpty?1:0);
+  return (fc+1)*Math.pow(2,Math.max(ec,0));
+}
+function foundCount(){return S.found.reduce((a,f)=>a+f.length,0)}
+
+/* plan a move: src = loc of first card, dst = {t,i}; returns {cards,dst} or null */
+function plan(src,dst){
+  let cards=cardsAt(src);
+  if(!cards||!validRun(cards))return null;
+  if(dst.t==='found'){
+    if(cards.length!==1)return null;
+    const c=cards[0];
+    if(S.found[suit(c)].length!==rank(c))return null;
+    return{cards,dst:{t:'found',i:suit(c)}};
+  }
+  if(dst.t==='cell'){
+    if(cards.length!==1||src.t==='cell')return null;
+    const i=S.cells[dst.i]===null?dst.i:S.cells.indexOf(null);
+    if(i<0)return null;
+    return{cards,dst:{t:'cell',i}};
+  }
+  if(dst.t==='col'){
+    if(src.t==='col'&&src.i===dst.i)return null;
+    const col=S.cols[dst.i];
+    if(!col.length){
+      const m=maxMove(true);
+      if(cards.length>m)cards=cards.slice(cards.length-m);
+      return{cards,dst:{t:'col',i:dst.i}};
+    }
+    const top=col[col.length-1];
+    for(let s=0;s<cards.length;s++){
+      if(stack(cards[s],top)){
+        if(cards.length-s<=maxMove(false))return{cards:cards.slice(s),dst:{t:'col',i:dst.i}};
+        return{tooMany:true};
+      }
+    }
+  }
+  return null;
+}
+function apply(p){
+  const l=loc(p.cards[0]);
+  if(l.t==='col')S.cols[l.i].splice(S.cols[l.i].length-p.cards.length);
+  else if(l.t==='cell')S.cells[l.i]=null;
+  const d=p.dst;
+  if(d.t==='col')S.cols[d.i].push(...p.cards);
+  else if(d.t==='cell')S.cells[d.i]=p.cards[0];
+  else S.found[d.i].push(p.cards[0]);
+}
+function doMove(p){
+  undoStack.push(snap());
+  apply(p);
+  S.moves++;
+  if(!S.started){S.started=true}
+  if(!S.counted){S.counted=true;stats.played++;save('fc_stats',stats)}
+  sel=null;
+  render();
+  autoCollect();
+}
+
+/* smart destination for a tap */
+function smart(src){
+  const first=cardsAt(src)?.[0];
+  const ok=p=>p&&!p.tooMany&&p.cards[0]===first;
+  let p=plan(src,{t:'found'});if(ok(p))return p;
+  for(let j=0;j<8;j++){if(!S.cols[j].length)continue;p=plan(src,{t:'col',i:j});if(ok(p))return p}
+  if(!(src.t==='col'&&src.k===0)){
+    const j=S.cols.findIndex(c=>!c.length);
+    if(j>=0){p=plan(src,{t:'col',i:j});if(ok(p))return p}
+  }
+  if(src.t==='col'&&src.k===S.cols[src.i].length-1){p=plan(src,{t:'cell',i:0});if(ok(p))return p}
+  return null;
+}
+
+/* auto-collect safe cards to foundations */
+function safeToFound(c){
+  const r=rank(c);
+  if(S.found[suit(c)].length!==r)return false;
+  if(r<=1)return true;
+  const opp=red(c)?[0,3]:[1,2];
+  return opp.every(s=>S.found[s].length>=r);
+}
+function allSorted(){return S.cols.every(col=>col.every((c,i)=>i===0||rank(c)<rank(col[i-1])))}
+function autoCollect(){
+  const finish=allSorted();
+  const cand=[...S.cols.map(c=>c[c.length-1]).filter(x=>x!==undefined),...S.cells.filter(x=>x!==null)];
+  cand.sort((a,b)=>rank(a)-rank(b));
+  for(const c of cand){
+    if(S.found[suit(c)].length===rank(c)&&(finish||safeToFound(c))){
+      busy=true;
+      setTimeout(()=>{apply({cards:[c],dst:{t:'found',i:suit(c)}});render();autoCollect()},finish?60:120);
+      return;
+    }
+  }
+  busy=false;
+  persist();
+  checkWin();
+}
+function checkWin(){
+  if(S.won||foundCount()<52)return;
+  S.won=true;
+  stats.won++;stats.streak++;stats.bestStreak=Math.max(stats.bestStreak,stats.streak);
+  if(stats.bestTime===null||S.elapsed<stats.bestTime)stats.bestTime=S.elapsed;
+  if(stats.fewestMoves===null||S.moves<stats.fewestMoves)stats.fewestMoves=S.moves;
+  save('fc_stats',stats);persist();
+  setTimeout(()=>{
+    $('winText').innerHTML=`第 #${S.deal} 局<br>時間 ${fmt(S.elapsed)}　步數 ${S.moves}　分數 ${score()}`;
+    prepareWin();
+    show('ovWin');
+  },500);
+}
+
+/* hint */
+function findHint(){
+  const srcs=[];
+  S.cols.forEach((col,i)=>{for(let k=col.length-1;k>=0;k--){if(validRun(col.slice(k)))srcs.push({t:'col',i,k});else break}});
+  S.cells.forEach((c,i)=>{if(c!==null)srcs.push({t:'cell',i})});
+  const first=s=>cardsAt(s)[0];
+  const inRun=s=>s.t==='col'&&s.k>0&&stack(S.cols[s.i][s.k],S.cols[s.i][s.k-1]);
+  for(const s of srcs){const p=plan(s,{t:'found'});if(p&&!p.tooMany)return p}
+  for(const s of srcs){if(inRun(s))continue;
+    for(let j=0;j<8;j++){if(!S.cols[j].length)continue;const p=plan(s,{t:'col',i:j});if(p&&!p.tooMany&&p.cards[0]===first(s))return p}}
+  const ej=S.cols.findIndex(c=>!c.length);
+  if(ej>=0)for(const s of srcs){if(inRun(s)||(s.t==='col'&&s.k===0))continue;const p=plan(s,{t:'col',i:ej});if(p&&p.cards[0]===first(s))return p}
+  for(const s of srcs){if(s.t==='col'&&s.k===S.cols[s.i].length-1&&S.cols[s.i].length>1){const p=plan(s,{t:'cell',i:0});if(p)return p}}
+  return null;
+}
+
+/* ---------- rendering ---------- */
+const cardEl=[], slotEl={};
+let L={};
+function buildDom(){
+  for(let i=0;i<4;i++){const d=document.createElement('div');d.className='slot cell';d.dataset.t='cell';d.dataset.i=i;board.appendChild(d);slotEl['cell'+i]=d}
+  for(let i=0;i<4;i++){const d=document.createElement('div');d.className='slot found';d.dataset.t='found';d.dataset.i=i;d.textContent='A';board.appendChild(d);slotEl['found'+i]=d}
+  for(let i=0;i<8;i++){const d=document.createElement('div');d.className='slot col';d.dataset.t='col';d.dataset.i=i;board.appendChild(d);slotEl['col'+i]=d}
+  for(let id=0;id<52;id++){
+    const d=document.createElement('div');
+    d.className='card'+(red(id)?' red':'');d.dataset.id=id;
+    const r=RANKS[rank(id)],s=SUITS[suit(id)];
+    d.innerHTML=`<div class="tl${rank(id)===9?' ten':''}"><span>${r}</span>${suitIcon(suit(id))}</div>${rank(id)>=10?`<div class="court"><img src="cards/${"JQK"[rank(id)-10]}${"CDHS"[suit(id)]}.svg" alt="" draggable="false"></div>`:`<div class="art">${suitIcon(suit(id))}</div>`}`;
+    board.appendChild(d);cardEl[id]=d;
+  }
+}
+function suitIcon(su){return `<svg viewBox="0 0 100 100"><use href="#p${su}" fill="currentColor" stroke="currentColor"/></svg>`}
+function layout(){
+  const b=board.getBoundingClientRect();
+  const W=b.width,H=b.height;
+  const gap=Math.max(2.5,Math.min(8,W*0.008));
+  let cw=(W-gap*7-4)/8;
+  cw=Math.min(cw,(H*0.9)/1.4/3.5,90);
+  const side=(W-(cw*8+gap*7))/2;
+  const ch=cw*1.4;
+  L={W,H,gap,cw,ch,side,y0:ch+gap*2+Math.max(6,ch*0.12)};
+  board.style.setProperty('--cw',cw+'px');
+  board.style.setProperty('--ch',ch+'px');
+  const x=i=>side+i*(cw+gap);
+  for(let i=0;i<4;i++){pos(slotEl['cell'+i],x(i),gap);pos(slotEl['found'+i],x(4+i),gap)}
+  for(let i=0;i<8;i++){const d=slotEl['col'+i];pos(d,x(i),L.y0);d.style.height=(H-L.y0)+'px'}
+}
+function pos(el,x,y){el.style.transform=`translate(${x}px,${y}px)`}
+const X=i=>L.side+i*(L.cw+L.gap);
+function colOffset(n){const base=L.ch*0.4;if(n<=1)return base;return Math.min(base,(L.H-L.y0-L.ch-6)/(n-1))}
+const P=[];
+function render(){
+  const selIds=sel!==null&&loc(sel)?cardsAt(loc(sel)):[];
+  S.cols.forEach((col,i)=>{const off=colOffset(col.length);col.forEach((id,k)=>{P[id]=[X(i),L.y0+k*off,10+k]})});
+  S.cells.forEach((id,i)=>{if(id!==null)P[id]=[X(i),L.gap,10]});
+  S.found.forEach((f,s)=>f.forEach((id,k)=>{P[id]=[X(4+s),L.gap,10+k]}));
+  for(let id=0;id<52;id++){
+    const e=cardEl[id],p=P[id];
+    e.style.transform=`translate(${p[0]}px,${p[1]}px)`;
+    e.style.zIndex=selIds.includes(id)?500+p[2]:p[2];
+    e.classList.toggle('sel',selIds.includes(id));
+  }
+  $('dealNo').textContent='#'+S.deal;
+  $('tMoves').textContent='步數 '+S.moves;
+  $('tScore').textContent='分數 '+score();
+  $('tTime').textContent=fmt(S.elapsed);
+  $('bUndo').disabled=!undoStack.length;
+}
+function score(){return foundCount()*10+(S.won?Math.max(0,600-S.elapsed)+Math.max(0,300-S.moves*2):0)}
+function fmt(s){const m=Math.floor(s/60);return m+':'+String(s%60).padStart(2,'0')}
+function dealAnimation(){
+  const cx=L.W/2-L.cw/2,cy=L.H;
+  for(let id=0;id<52;id++){const e=cardEl[id];e.style.transition='none';e.style.transform=`translate(${cx}px,${cy}px)`}
+  board.offsetHeight;
+  let order=0;
+  const delays=[];
+  S.cols.forEach(col=>col.forEach((id,k)=>{delays[id]=0}));
+  for(let k=0;k<7;k++)for(let i=0;i<8;i++){const id=S.cols[i][k];if(id!==undefined)delays[id]=order++*14}
+  for(let id=0;id<52;id++){const e=cardEl[id];e.style.transition='';e.style.transitionDelay=(delays[id]||0)+'ms'}
+  render();
+  setTimeout(()=>{for(let id=0;id<52;id++)cardEl[id].style.transitionDelay=''},52*14+300);
+}
+
+/* ---------- input ---------- */
+function targetOfEl(el){
+  while(el&&el!==board){
+    if(el.dataset&&el.dataset.id!==undefined)return{card:+el.dataset.id};
+    if(el.dataset&&el.dataset.t)return{t:el.dataset.t,i:+el.dataset.i};
+    el=el.parentElement;
+  }
+  return null;
+}
+function dstOf(tg){
+  if(tg.card!==undefined){const l=loc(tg.card);return l.t==='col'?{t:'col',i:l.i}:{t:l.t,i:l.i}}
+  return{t:tg.t,i:tg.i};
+}
+let drag=null;
+document.addEventListener('touchmove',e=>{if(!e.target.closest||!e.target.closest('.panel'))e.preventDefault()},{passive:false});
+board.addEventListener('touchstart',e=>{e.preventDefault()},{passive:false});
+board.addEventListener('pointerdown',e=>{
+  if(busy||S.won||drag)return;
+  const tg=targetOfEl(e.target);if(!tg)return;
+  drag={tg,x0:e.clientX,y0:e.clientY,started:false,pid:e.pointerId,ids:null};
+  if(tg.card!==undefined&&movable(tg.card))drag.ids=cardsAt(loc(tg.card));
+});
+window.addEventListener('pointermove',e=>{
+  if(!drag||e.pointerId!==drag.pid||!drag.ids)return;
+  const dx=e.clientX-drag.x0,dy=e.clientY-drag.y0;
+  if(!drag.started){
+    if(Math.hypot(dx,dy)<7)return;
+    drag.started=true;sel=null;render();
+    drag.ids.forEach((id,n)=>{cardEl[id].classList.add('drag');cardEl[id].style.zIndex=2000+n});
+  }
+  drag.ids.forEach(id=>{const p=P[id];cardEl[id].style.transform=`translate(${p[0]+dx}px,${p[1]+dy}px)`});
+});
+function endDrag(e){
+  if(!drag||e.pointerId!==drag.pid)return;
+  const d=drag;drag=null;
+  if(!d.started){if(e.type==='pointerup')handleTap(d.tg);return}
+  d.ids.forEach(id=>cardEl[id].classList.remove('drag'));
+  if(e.type==='pointercancel'){render();return}
+  // forgiving drop: rank every slot by how much the dragged card overlaps it
+  const br=board.getBoundingClientRect();
+  const lr=cardEl[d.ids[0]].getBoundingClientRect();
+  const r={l:lr.left-br.left,t:lr.top-br.top,r:lr.right-br.left,b:lr.bottom-br.top};
+  const px=e.clientX-br.left,py=e.clientY-br.top;
+  const zones=[];
+  for(let i=0;i<4;i++){zones.push({dst:{t:'cell',i},x:X(i),y:L.gap,h:L.ch});zones.push({dst:{t:'found',i},x:X(4+i),y:L.gap,h:L.ch})}
+  for(let i=0;i<8;i++)zones.push({dst:{t:'col',i},x:X(i),y:L.y0,h:L.H-L.y0});
+  const cand=[];
+  for(const z of zones){
+    const zl=z.x-L.gap/2,zr=z.x+L.cw+L.gap/2,zt=z.y,zb=z.y+z.h;
+    const ov=Math.max(0,Math.min(r.r,zr)-Math.max(r.l,zl))*Math.max(0,Math.min(r.b,zb)-Math.max(r.t,zt));
+    const under=px>=zl&&px<=zr&&py>=zt-L.gap&&py<=zb;
+    if(ov>0||under)cand.push({dst:z.dst,score:ov+(under?1e6:0)});
+  }
+  cand.sort((a,b)=>b.score-a.score);
+  const src=loc(d.ids[0]);
+  let tooMany=false;
+  for(const c of cand){
+    const p=plan(src,c.dst);
+    if(p&&p.tooMany){tooMany=true;continue}
+    if(p){doMove(p);return}
+  }
+  if(tooMany)toast('暫存格/空欄不夠，一次搬不了這麼多張');
+  render();
+}
+window.addEventListener('pointerup',endDrag);
+window.addEventListener('pointercancel',endDrag);
+
+function nope(id){const e=cardEl[id];e.classList.remove('nope');void e.offsetWidth;e.classList.add('nope')}
+function handleTap(tg){
+  if(settings.tapAuto){
+    if(tg.card===undefined)return;
+    if(!movable(tg.card)){nope(tg.card);return}
+    const p=smart(loc(tg.card));
+    if(p)doMove(p);else nope(tg.card);
+    return;
+  }
+  // select-then-target mode
+  if(sel!==null){
+    const src=loc(sel);
+    const selIds=cardsAt(src);
+    if(tg.card!==undefined&&selIds.includes(tg.card)){const p=smart(src);sel=null;if(p)doMove(p);else{render();nope(tg.card)}return}
+    const p=plan(src,dstOf(tg));
+    if(p&&p.tooMany){toast('暫存格/空欄不夠，一次搬不了這麼多張');sel=null;render();return}
+    if(p){doMove(p);return}
+    sel=(tg.card!==undefined&&movable(tg.card))?tg.card:null;
+    render();return;
+  }
+  if(tg.card!==undefined&&movable(tg.card)){sel=tg.card;render()}
+}
+
+/* ---------- controls ---------- */
+let toastT;
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2000)}
+function show(id){$(id).classList.add('show')}
+function hide(id){$(id).classList.remove('show')}
+document.querySelectorAll('.overlay').forEach(o=>{
+  o.addEventListener('click',e=>{if(e.target===o||e.target.hasAttribute('data-close'))o.classList.remove('show')});
+});
+function abandonCheck(){if(S&&S.counted&&!S.won){stats.streak=0;save('fc_stats',stats)}}
+function randomDeal(){let d;do{d=1+Math.floor(Math.random()*32000)}while(d===11982);return d}
+function newGame(deal){
+  abandonCheck();
+  S=fresh(deal||randomDeal());undoStack=[];sel=null;busy=false;
+  hide('ovWin');persist();dealAnimation();
+}
+$('bNew').onclick=()=>{if(!busy)newGame()};
+$('bRestart').onclick=()=>{if(busy)return;if(!undoStack.length){toast('這局還沒開始');return}
+  const d=S.deal,el=S.elapsed,c=S.counted;S=fresh(d);S.elapsed=el;S.counted=c;S.started=true;undoStack=[];sel=null;persist();dealAnimation()};
+$('bUndo').onclick=()=>{
+  if(busy||!undoStack.length)return;
+  const o=JSON.parse(undoStack.pop());
+  S.cols=o.cols;S.cells=o.cells;S.found=o.found;S.moves=o.moves;S.won=false;sel=null;
+  render();persist();
+};
+$('bHint').onclick=()=>{
+  if(busy||S.won)return;
+  const p=findHint();
+  if(!p){toast('找不到好走的步，試試「復原」');return}
+  const els=p.cards.map(id=>cardEl[id]);
+  const d=p.dst;
+  if(d.t==='col'&&S.cols[d.i].length)els.push(cardEl[S.cols[d.i][S.cols[d.i].length-1]]);
+  else if(d.t==='found'&&S.found[d.i].length)els.push(cardEl[S.found[d.i][S.found[d.i].length-1]]);
+  else els.push(slotEl[d.t+d.i]);
+  els.forEach(e=>{e.classList.remove('hint');void e.offsetWidth;e.classList.add('hint')});
+  setTimeout(()=>els.forEach(e=>e.classList.remove('hint')),2000);
+};
+$('bMenu').onclick=()=>{$('swTap').classList.toggle('on',settings.tapAuto);show('ovMenu')};
+$('miTap').onclick=()=>{settings.tapAuto=!settings.tapAuto;save('fc_settings',settings);$('swTap').classList.toggle('on',settings.tapAuto);sel=null;render();
+  toast(settings.tapAuto?'點一下：自動移動':'點一下選牌，再點目的地')};
+$('miDeal').onclick=()=>{hide('ovMenu');$('inDeal').value=S.deal;show('ovDeal');setTimeout(()=>$('inDeal').select(),50)};
+$('bGoDeal').onclick=()=>{const v=parseInt($('inDeal').value,10);if(!(v>=1&&v<=32000)){toast('請輸入 1 – 32000');return}hide('ovDeal');newGame(v)};
+$('inDeal').addEventListener('keydown',e=>{if(e.key==='Enter')$('bGoDeal').click()});
+function showStats(){
+  const rate=stats.played?Math.round(stats.won/stats.played*100):0;
+  $('statGrid').innerHTML=[
+    ['已玩',stats.played],['過關',stats.won],['勝率',rate+'%'],['目前連勝',stats.streak],
+    ['最長連勝',stats.bestStreak],['最快時間',stats.bestTime===null?'—':fmt(stats.bestTime)],
+    ['最少步數',stats.fewestMoves===null?'—':stats.fewestMoves]
+  ].map(([k,v])=>`<div><b>${v}</b><span>${k}</span></div>`).join('');
+  show('ovStats');
+}
+$('miStats').onclick=()=>{hide('ovMenu');showStats()};
+$('bWinNew').onclick=()=>newGame();
+$('miRules').onclick=()=>{hide('ovMenu');show('ovRules')};
+let resetArmed=false;
+$('bResetStats').onclick=()=>{
+  if(!resetArmed){resetArmed=true;$('bResetStats').textContent='再按一次確認';setTimeout(()=>{resetArmed=false;$('bResetStats').textContent='清除統計'},2500);return}
+  stats={played:0,won:0,streak:0,bestStreak:0,bestTime:null,fewestMoves:null};save('fc_stats',stats);resetArmed=false;$('bResetStats').textContent='清除統計';showStats();
+};
+
+/* heroes (stored on this device) */
+let heroes=load('fc_heroes',{});
+let player=load('fc_player','');
+function cleanName(n){return String(n||'').replace(/[<>&"]/g,'').trim().slice(0,12)}
+function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML}
+function recordWin(name){
+  name=cleanName(name);if(!name||S.recordedBy)return false;
+  const h=heroes[name]||{wins:0,bestTime:null,fewestMoves:null,bestScore:0};
+  h.wins++;
+  if(h.bestTime===null||S.elapsed<h.bestTime)h.bestTime=S.elapsed;
+  if(h.fewestMoves===null||S.moves<h.fewestMoves)h.fewestMoves=S.moves;
+  h.bestScore=Math.max(h.bestScore||0,score());
+  heroes[name]=h;save('fc_heroes',heroes);
+  S.recordedBy=name;persist();
+  return true;
+}
+function rankList(k){
+  const arr=Object.entries(heroes).filter(([n,h])=>k==='wins'?h.wins>0:h[k]!==null);
+  arr.sort((a,b)=>k==='wins'?(b[1].wins-a[1].wins)||((a[1].bestTime??1e9)-(b[1].bestTime??1e9)):(a[1][k]-b[1][k]));
+  return arr;
+}
+function fmtHero(k,h){return k==='wins'?h.wins+' 勝':k==='bestTime'?fmt(h.bestTime):h.fewestMoves+' 步'}
+let heroTab='wins';
+function showHeroes(){
+  document.querySelectorAll('#ovHeroes .tabs button').forEach(b=>b.classList.toggle('on',b.dataset.k===heroTab));
+  const arr=rankList(heroTab);
+  const medal=['🥇','🥈','🥉'];
+  $('heroList').innerHTML=arr.length?arr.slice(0,30).map(([n,h],i)=>
+    `<div class="hero${n===player?' me':''}"><div class="rk">${medal[i]||i+1}</div><div class="nm">${esc(n)}</div><div class="vl">${fmtHero(heroTab,h)}</div></div>`).join('')
+    :'<div class="empty">還沒有人上榜，過關後登錄名字就會出現在這裡</div>';
+  show('ovHeroes');
+}
+document.querySelectorAll('#ovHeroes .tabs button').forEach(b=>b.onclick=()=>{heroTab=b.dataset.k;showHeroes()});
+function updatePlayerLabel(){$('playerName').textContent=(player||'未設定')+' ›'}
+function setPlayer(n){n=cleanName(n);if(!n){toast('請輸入名字');return false}player=n;save('fc_player',player);updatePlayerLabel();return true}
+$('miHeroes').onclick=()=>{hide('ovMenu');heroTab='wins';showHeroes()};
+$('miPlayer').onclick=()=>{
+  hide('ovMenu');$('inPlayer').value=player;
+  $('playerChips').innerHTML=Object.keys(heroes).map(n=>`<button style="flex:0 0 auto;padding:6px 12px;border-radius:999px;font-size:14px" data-n="${esc(n)}">${esc(n)}</button>`).join('');
+  $('playerChips').querySelectorAll('button').forEach(b=>b.onclick=()=>{setPlayer(b.dataset.n);hide('ovPlayer');toast('目前玩家：'+player)});
+  show('ovPlayer');
+};
+$('bSavePlayer').onclick=()=>{if(setPlayer($('inPlayer').value)){hide('ovPlayer');toast('目前玩家：'+player)}};
+$('inPlayer').addEventListener('keydown',e=>{if(e.key==='Enter')$('bSavePlayer').click()});
+function resultCode(){
+  const who=S.recordedBy||player;
+  return `🃏 新接龍 #${S.deal} 過關！\n⏱ ${fmt(S.elapsed)}　👣 ${S.moves} 步　🏆 ${score()} 分${who?'\n— '+who:''}`;
+}
+function winRankText(name){
+  const arr=rankList('wins');const i=arr.findIndex(([n])=>n===name);
+  return i>=0?`${name} 英雄榜第 ${i+1} 名（${arr[i][1].wins} 勝）`:'';
+}
+function prepareWin(){
+  $('codeBox').style.display='none';
+  if(player){recordWin(player);$('winName').style.display='none';$('winRank').textContent=winRankText(player)}
+  else{$('winName').style.display='flex';$('inWinName').value='';$('winRank').textContent=''}
+}
+$('bWinSave').onclick=()=>{
+  if(!setPlayer($('inWinName').value))return;
+  recordWin(player);$('winName').style.display='none';$('winRank').textContent=winRankText(player);
+};
+$('inWinName').addEventListener('keydown',e=>{if(e.key==='Enter')$('bWinSave').click()});
+$('bCopyCode').onclick=async()=>{
+  const txt=resultCode();const box=$('codeBox');box.value=txt;
+  try{await navigator.clipboard.writeText(txt);toast('已複製，貼到 LINE 群組吧！')}
+  catch(e){box.style.display='block';box.focus();box.select();toast('請長按上面的文字複製')}
+};
+$('bWinHeroes').onclick=()=>{hide('ovWin');heroTab='wins';showHeroes()};
+updatePlayerLabel();
+
+/* timer */
+setInterval(()=>{if(S&&S.started&&!S.won&&!document.hidden){S.elapsed++;$('tTime').textContent=fmt(S.elapsed);if(S.elapsed%5===0)persist()}},1000);
+
+window.addEventListener('resize',()=>{layout();render()});
+
+/* ---------- start ---------- */
+buildDom();layout();
+const saved=load('fc_game',null);
+if(saved&&saved.S&&saved.S.cols&&!saved.S.won){
+  S=saved.S;undoStack=saved.undo||[];render();
+}else{
+  S=fresh(randomDeal());
+  dealAnimation();
+  if(!load('fc_seen',false)){save('fc_seen',true);setTimeout(()=>show('ovRules'),900)}
+}
+window.__fc={get S(){return S},plan,apply,findHint,smart,dealCols,loc};
+})();
+</script>
+</body>
+</html>
