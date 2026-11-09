@@ -105,6 +105,13 @@ nav button:disabled{opacity:.35}
   <button id="bMenu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>選單</button>
 </nav>
 
+<div class="overlay" id="ovName" style="background:#3a9e3f"><div class="panel">
+  <h2>🃏 歡迎來玩新接龍</h2>
+  <p>請輸入你的遊戲名稱，英雄榜和線上玩家都會用這個名字。只要輸入一次，下次打開就會自動登入。</p>
+  <div class="namebox"><input id="inName" maxlength="12" placeholder="遊戲名稱（最多 12 個字）" autocomplete="nickname"><button class="primary" id="bName">開始玩</button></div>
+  <p class="muted" id="nameMsg">之後想改名字，可以到「選單 → 目前玩家」。</p>
+</div></div>
+
 <div class="overlay" id="ovMenu"><div class="panel">
   <h2>選單</h2>
   <div class="menu-item" id="miDeal">選擇局號<span>›</span></div>
@@ -221,7 +228,7 @@ if (FIREBASE_CONFIG) {
 <script>
 (function(){
 'use strict';
-const APP_VERSION='v1.5', APP_DATE='2026-11-09';
+const APP_VERSION='v1.6', APP_DATE='2026-11-09';
 const SUITS=['♣','♦','♥','♠'];
 const RANKS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 const rank=id=>id>>2, suit=id=>id&3, red=id=>(id&3)===1||(id&3)===2;
@@ -554,7 +561,7 @@ let toastT;
 function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2000)}
 function show(id){$(id).classList.add('show')}
 function hide(id){$(id).classList.remove('show')}
-document.querySelectorAll('.overlay').forEach(o=>{
+document.querySelectorAll('.overlay:not(#ovName)').forEach(o=>{
   o.addEventListener('click',e=>{if(e.target===o||e.target.hasAttribute('data-close')){o.classList.remove('show');if(o.id==='ovHeroes'&&typeof stopHeroes==='function')stopHeroes()}});
 });
 function abandonCheck(){if(S&&S.counted&&!S.won){stats.streak=0;save('fc_stats',stats)}}
@@ -777,6 +784,17 @@ function showOnline(){show('ovOnline');renderOnline()}
 $('onlineBadge').onclick=showOnline;
 $('miOnline').onclick=()=>{hide('ovMenu');if(!onl()){toast('目前連不上網路');return}showOnline()};
 
+/* ---------- login: game name required once ---------- */
+function doLogin(){
+  if(!setPlayer($('inName').value)){$('nameMsg').textContent='請輸入遊戲名稱';return}
+  hide('ovName');toast('歡迎，'+player+'！');
+  if(!load('fc_seen',false)){save('fc_seen',true);setTimeout(()=>show('ovRules'),400)}
+}
+$('bName').onclick=doLogin;
+$('inName').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+const needLogin=!player;
+if(needLogin){show('ovName');setTimeout(()=>{try{$('inName').focus()}catch(e){}},300)}
+
 /* ---------- start ---------- */
 buildDom();layout();
 const saved=load('fc_game',null);
@@ -785,7 +803,7 @@ if(saved&&saved.S&&saved.S.cols&&!saved.S.won){
 }else{
   S=fresh(randomDeal());
   dealAnimation();
-  if(!load('fc_seen',false)){save('fc_seen',true);setTimeout(()=>show('ovRules'),900)}
+  if(!needLogin&&!load('fc_seen',false)){save('fc_seen',true);setTimeout(()=>show('ovRules'),900)}
 }
 if(onl())startPresence();else window.addEventListener('online-ready',startPresence,{once:true});
 window.__fc={get S(){return S},plan,apply,findHint,smart,dealCols,loc};
