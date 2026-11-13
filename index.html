@@ -190,7 +190,7 @@ nav button:disabled{opacity:.35}
   <div class="namebox" id="winName"><input id="inWinName" maxlength="12" placeholder="輸入名字登上英雄榜"><button class="primary" id="bWinSave">登錄</button></div>
   <textarea id="codeBox" rows="3" readonly></textarea>
   <div class="row"><button id="bCopyCode">📋 複製成績碼</button><button id="bWinHeroes">🏆 英雄榜</button></div>
-  <div class="row" style="margin-top:8px"><button class="primary" id="bWinNew">再來一局</button></div>
+  <div class="row" style="margin-top:8px"><button id="bWinStay" style="display:none;flex:0 0 auto;padding:14px 16px">先不要</button><button class="primary" id="bWinNew">再來一局</button></div>
 </div></div>
 
 <div id="toast"></div>
@@ -228,7 +228,7 @@ if (FIREBASE_CONFIG) {
 <script>
 (function(){
 'use strict';
-const APP_VERSION='v1.6', APP_DATE='2026-11-09';
+const APP_VERSION='v1.7', APP_DATE='2026-11-09';
 const SUITS=['♣','♦','♥','♠'];
 const RANKS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 const rank=id=>id>>2, suit=id=>id&3, red=id=>(id&3)===1||(id&3)===2;
@@ -378,6 +378,7 @@ function checkWin(){
     $('winText').innerHTML=`第 #${S.deal} 局<br>時間 ${fmt(S.elapsed)}　步數 ${S.moves}　分數 ${score()}`;
     prepareWin();
     show('ovWin');
+    startWinCountdown();
     if(typeof presenceWrite==='function')presenceWrite(false);
   },500);
 }
@@ -569,6 +570,7 @@ function randomDeal(){let d;do{d=1+Math.floor(Math.random()*32000)}while(d===119
 function newGame(deal){
   abandonCheck();
   S=fresh(deal||randomDeal());undoStack=[];sel=null;busy=false;
+  if(typeof stopWinCountdown==='function')stopWinCountdown();
   hide('ovWin');persist();dealAnimation();
   if(typeof presenceWrite==='function')presenceWrite(false);
 }
@@ -610,6 +612,27 @@ function showStats(){
 }
 $('miStats').onclick=()=>{hide('ovMenu');showStats()};
 $('bWinNew').onclick=()=>newGame();
+/* auto next game: 5-second countdown on the win screen */
+var winTimer=null;
+function stopWinCountdown(){
+  if(winTimer){clearInterval(winTimer);winTimer=null}
+  $('bWinNew').textContent='再來一局';$('bWinStay').style.display='none';
+}
+function startWinCountdown(){
+  stopWinCountdown();
+  if(!player)return; // still needs a name: wait for the player
+  let n=5;
+  const upd=()=>{$('bWinNew').textContent=`${n} 秒後開始下一局`};
+  $('bWinStay').style.display='';upd();
+  winTimer=setInterval(()=>{
+    n--;
+    if(n<=0){stopWinCountdown();if($('ovWin').classList.contains('show'))newGame()}
+    else upd();
+  },1000);
+}
+$('bWinStay').onclick=()=>{stopWinCountdown();toast('好的，想玩時再按「再來一局」')};
+$('ovWin').addEventListener('click',e=>{if(e.target===$('ovWin'))stopWinCountdown()});
+['bCopyCode','bWinHeroes','inWinName'].forEach(id=>$(id).addEventListener('pointerdown',stopWinCountdown));
 $('miRules').onclick=()=>{hide('ovMenu');show('ovRules')};
 let resetArmed=false;
 $('bResetStats').onclick=()=>{
