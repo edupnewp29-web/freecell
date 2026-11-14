@@ -228,7 +228,7 @@ if (FIREBASE_CONFIG) {
 <script>
 (function(){
 'use strict';
-const APP_VERSION='v1.7', APP_DATE='2026-11-09';
+const APP_VERSION='v1.8', APP_DATE='2026-11-09';
 const SUITS=['♣','♦','♥','♠'];
 const RANKS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 const rank=id=>id>>2, suit=id=>id&3, red=id=>(id&3)===1||(id&3)===2;
@@ -643,7 +643,7 @@ $('bResetStats').onclick=()=>{
 /* heroes (stored on this device) */
 let heroes=load('fc_heroes',{});
 let player=load('fc_player','');
-function cleanName(n){return String(n||'').replace(/[<>&"]/g,'').trim().slice(0,12)}
+function cleanName(n){return String(n||'').replace(/[<>&"\/#\[\]]/g,'').replace(/^\.+$/,'').trim().slice(0,12)}
 function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML}
 function recordWin(name){
   name=cleanName(name);if(!name||S.recordedBy)return false;
@@ -664,18 +664,42 @@ function rankList(k){
 function fmtHero(k,h){return k==='wins'?h.wins+' 勝':k==='bestTime'?fmt(h.bestTime):h.fewestMoves+' 步'}
 let heroTab='wins', heroUnsub=null;
 const onl=()=>window.__online||null;
-const pidOf=name=>onl().uid+'_'+name.replace(/[\/.#\[\]]/g,'_');
+// one record per game name: the same name on any phone is the same player
+const keyOf=n=>String(n).trim().toLowerCase();
+const heroCache={};
+async function ensureHero(name){
+  const o=onl();if(!o)return null;
+  const {fs,db}=o, key=keyOf(name), ref=fs.doc(db,'heroes',key);
+  const snap=await fs.getDoc(ref);
+  if(snap.exists())return snap.data();
+  if(heroCache[key]==='none')return null;
+  // first time for this name: merge any older per-phone records (players collection)
+  let agg=null;
+  try{
+    const qs=await fs.getDocs(fs.collection(db,'players'));
+    qs.docs.forEach(d=>{const r=d.data();if(!r||!r.name||keyOf(r.name)!==key)return;
+      if(!agg)agg={name,wins:0,bestTime:r.bestTime,fewestMoves:r.fewestMoves,bestScore:0};
+      agg.wins+=r.wins||0;agg.bestTime=Math.min(agg.bestTime,r.bestTime);
+      agg.fewestMoves=Math.min(agg.fewestMoves,r.fewestMoves);agg.bestScore=Math.max(agg.bestScore,r.bestScore||0)});
+  }catch(e){console.warn('merge old records',e)}
+  if(agg&&agg.wins>0){
+    agg.wins=Math.min(agg.wins,1000);
+    await fs.setDoc(ref,{...agg,lastUid:o.uid,updatedAt:fs.serverTimestamp()});
+    return agg;
+  }
+  heroCache[key]='none';return null;
+}
 async function submitOnline(name){
   const o=onl();if(!o)return 'offline';
-  const {fs,db}=o, el=Math.max(1,S.elapsed), mv=Math.max(1,S.moves), sc=score(), deal=S.deal;
-  const ref=fs.doc(db,'players',pidOf(name));
-  const snap=await fs.getDoc(ref);const old=snap.exists()?snap.data():null;
-  await fs.setDoc(ref,{uid:o.uid,name,wins:(old?old.wins:0)+1,
+  const {fs,db}=o, el=Math.max(1,S.elapsed), mv=Math.max(1,S.moves), sc=score(), deal=S.deal, key=keyOf(name);
+  const old=await ensureHero(name);
+  await fs.setDoc(fs.doc(db,'heroes',key),{name,wins:(old?old.wins:0)+1,
     bestTime:old?Math.min(old.bestTime,el):el,fewestMoves:old?Math.min(old.fewestMoves,mv):mv,
-    bestScore:Math.max(old?old.bestScore||0:0,sc),updatedAt:fs.serverTimestamp()});
-  const rref=fs.doc(db,'deals',String(deal),'runs',pidOf(name));
+    bestScore:Math.max(old?old.bestScore||0:0,sc),lastUid:o.uid,updatedAt:fs.serverTimestamp()});
+  delete heroCache[key];
+  const rref=fs.doc(db,'dealRuns',String(deal),'runs',key);
   const rs=await fs.getDoc(rref);
-  if(!rs.exists()||el<rs.data().time)await fs.setDoc(rref,{uid:o.uid,name,time:el,moves:mv,at:fs.serverTimestamp()});
+  if(!rs.exists()||el<rs.data().time)await fs.setDoc(rref,{name,time:el,moves:mv,lastUid:o.uid,at:fs.serverTimestamp()});
   return 'ok';
 }
 function heroRow(i,name,val,me){
@@ -701,21 +725,21 @@ function showHeroes(){
   $('heroNote').textContent='過關並登錄名字就會上榜。和朋友比同一局：選單 → 選擇局號。';
   $('heroList').innerHTML='<div class="empty">載入中…</div>';
   const q=heroTab==='deal'
-    ?fs.query(fs.collection(db,'deals',String(S.deal),'runs'),fs.orderBy('time','asc'),fs.limit(50))
-    :fs.query(fs.collection(db,'players'),fs.orderBy(heroTab,heroTab==='wins'?'desc':'asc'),fs.limit(50));
+    ?fs.query(fs.collection(db,'dealRuns',String(S.deal),'runs'),fs.orderBy('time','asc'),fs.limit(50))
+    :fs.query(fs.collection(db,'heroes'),fs.orderBy(heroTab,heroTab==='wins'?'desc':'asc'),fs.limit(50));
   const tab=heroTab;
   heroUnsub=fs.onSnapshot(q,snap=>{
     if(tab!==heroTab)return;
     const rows=snap.docs.map(d=>d.data());
     $('heroList').innerHTML=rows.length?rows.map((r,i)=>{
       const val=tab==='deal'?`${fmt(r.time)}・${r.moves} 步`:tab==='wins'?r.wins+' 勝':tab==='bestTime'?fmt(r.bestTime):r.fewestMoves+' 步';
-      return heroRow(i,r.name,val,r.uid===o.uid);
+      return heroRow(i,r.name,val,!!player&&keyOf(r.name)===keyOf(player));
     }).join(''):`<div class="empty">${tab==='deal'?'這一局還沒有人過關，搶第一！':'還沒有人上榜，搶第一！'}</div>`;
   },err=>{console.warn(err);showLocalHeroes()});
 }
 document.querySelectorAll('#ovHeroes .tabs button').forEach(b=>b.onclick=()=>{heroTab=b.dataset.k;showHeroes()});
 function updatePlayerLabel(){$('playerName').textContent=(player||'未設定')+' ›'}
-function setPlayer(n){n=cleanName(n);if(!n){toast('請輸入名字');return false}player=n;save('fc_player',player);updatePlayerLabel();if(typeof presenceWrite==='function')presenceWrite(false);return true}
+function setPlayer(n){n=cleanName(n);if(!n){toast('請輸入名字');return false}player=n;save('fc_player',player);updatePlayerLabel();if(onl())ensureHero(player).catch(e=>console.warn(e));if(typeof presenceWrite==='function')presenceWrite(false);return true}
 $('miHeroes').onclick=()=>{hide('ovMenu');heroTab='wins';showHeroes()};
 $('miPlayer').onclick=()=>{
   hide('ovMenu');$('inPlayer').value=player;
@@ -829,6 +853,24 @@ if(saved&&saved.S&&saved.S.cols&&!saved.S.won){
   if(!needLogin&&!load('fc_seen',false)){save('fc_seen',true);setTimeout(()=>show('ovRules'),900)}
 }
 if(onl())startPresence();else window.addEventListener('online-ready',startPresence,{once:true});
+async function mergeAllOld(){
+  const o=onl();if(!o)return;const {fs,db}=o;
+  if(load('fc_merged_v18',false))return;
+  const qs=await fs.getDocs(fs.collection(db,'players'));
+  const groups={};
+  qs.docs.forEach(d=>{const r=d.data();if(!r||!r.name)return;const k=keyOf(r.name);
+    const g=groups[k]||(groups[k]={name:r.name,wins:0,bestTime:r.bestTime,fewestMoves:r.fewestMoves,bestScore:0});
+    g.wins+=r.wins||0;g.bestTime=Math.min(g.bestTime,r.bestTime);g.fewestMoves=Math.min(g.fewestMoves,r.fewestMoves);g.bestScore=Math.max(g.bestScore,r.bestScore||0)});
+  for(const [k,g] of Object.entries(groups)){
+    if(!(g.wins>0)||!cleanName(g.name)||keyOf(cleanName(g.name))!==k)continue;
+    const ref=fs.doc(db,'heroes',k);
+    if((await fs.getDoc(ref)).exists())continue;
+    await fs.setDoc(ref,{...g,wins:Math.min(g.wins,1000),lastUid:o.uid,updatedAt:fs.serverTimestamp()}).catch(e=>console.warn('merge',k,e));
+  }
+  save('fc_merged_v18',true);
+}
+function mergeOnStart(){mergeAllOld().catch(e=>console.warn(e)).finally(()=>{if(player&&onl())ensureHero(player).catch(e=>console.warn(e))})}
+if(onl())mergeOnStart();else window.addEventListener('online-ready',mergeOnStart,{once:true});
 window.__fc={get S(){return S},plan,apply,findHint,smart,dealCols,loc};
 })();
 </script>

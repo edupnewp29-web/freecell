@@ -36,5 +36,33 @@ service cloud.firestore {
         && request.resource.data.name is string && request.resource.data.name.size() <= 12
         && request.resource.data.deal is int;
     }
+
+    // v1.8+: one record per game name (same name on any phone = same player)
+    function heroOk(key) {
+      return request.auth != null
+        && validName(request.resource.data.name)
+        && request.resource.data.name.lower() == key
+        && request.resource.data.bestTime is int && request.resource.data.bestTime >= 1
+        && request.resource.data.fewestMoves is int && request.resource.data.fewestMoves >= 1;
+    }
+    match /heroes/{key} {
+      allow read: if true;
+      allow create: if heroOk(key)
+        && request.resource.data.wins is int
+        && request.resource.data.wins >= 1 && request.resource.data.wins <= 1000;
+      allow update: if heroOk(key)
+        && (request.resource.data.wins == resource.data.wins + 1
+            || request.resource.data.wins == resource.data.wins);
+      allow delete: if false;
+    }
+    match /dealRuns/{deal}/runs/{key} {
+      allow read: if true;
+      allow create, update: if request.auth != null
+        && validName(request.resource.data.name)
+        && request.resource.data.name.lower() == key
+        && request.resource.data.time is int && request.resource.data.time >= 1
+        && request.resource.data.moves is int && request.resource.data.moves >= 1;
+      allow delete: if false;
+    }
   }
 }
