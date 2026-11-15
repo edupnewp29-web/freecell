@@ -14,6 +14,7 @@
 <title>新接龍 FreeCell</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{background:#173f20}
 html,body{height:100%;overflow:hidden;overscroll-behavior:none;touch-action:none}
 body{background:radial-gradient(ellipse at 50% 30%,#2b7a39 0%,#22632e 60%,#1c5527 100%);font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;color:#fff;display:flex;flex-direction:column;position:fixed;top:0;left:0;right:0;bottom:0;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 header{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:calc(6px + env(safe-area-inset-top)) calc(10px + env(safe-area-inset-right)) 4px calc(10px + env(safe-area-inset-left));font-size:18px;flex-wrap:wrap;row-gap:2px;font-variant-numeric:tabular-nums;max-width:760px;width:100%;margin:0 auto}
@@ -27,7 +28,7 @@ header .stats span{font-weight:700;font-size:17px}
 .slot.cell,.slot.found{height:var(--ch);border:none;background:rgba(255,255,255,.14);box-shadow:inset 0 0 6px rgba(0,0,0,.18);border-radius:6px;display:flex;align-items:center;justify-content:center}
 .slot.found{color:rgba(255,255,255,.3);font-weight:700;font-size:calc(var(--cw)*.75);font-family:Arial,Helvetica,sans-serif}
 .slot.col::before{content:"";position:absolute;left:0;top:0;right:0;height:var(--ch);border-radius:6px;border:none;background:rgba(255,255,255,.08)}
-.card{position:absolute;left:0;top:0;width:var(--cw);height:var(--ch);border-radius:6px;background:#fff;border:1px solid #9a9a9a;box-shadow:0 1px 3px rgba(0,0,0,.45);color:#000;font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;transition:transform .2s ease,box-shadow .15s;will-change:transform;overflow:hidden}
+.card{position:absolute;left:0;top:0;width:var(--cw);height:var(--ch);border-radius:6px;background:#ffffff;border:1px solid #d4d4d4;box-shadow:0 1px 2px rgba(0,0,0,.5),inset 0 0 0 1px #fff;color:#000;filter:brightness(1.04) contrast(1.06);font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;transition:transform .2s ease,box-shadow .15s;will-change:transform;overflow:hidden}
 .card.red{color:#ff0a24}
 .card .tl{position:absolute;z-index:2;left:calc(var(--cw)*.06);right:calc(var(--cw)*.06);top:calc(var(--cw)*.03);display:flex;align-items:center;justify-content:space-between;font-weight:700;line-height:1;font-size:calc(var(--cw)*.5);letter-spacing:-1px}
 .card .tl svg{width:calc(var(--cw)*.34);height:calc(var(--cw)*.34)}
@@ -228,7 +229,7 @@ if (FIREBASE_CONFIG) {
 <script>
 (function(){
 'use strict';
-const APP_VERSION='v2.0', APP_DATE='2026-11-09';
+const APP_VERSION='v2.1', APP_DATE='2026-11-09';
 const SUITS=['♣','♦','♥','♠'];
 const RANKS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 const rank=id=>id>>2, suit=id=>id&3, red=id=>(id&3)===1||(id&3)===2;
@@ -786,11 +787,21 @@ updatePlayerLabel();
 /* timer */
 setInterval(()=>{if(S&&S.started&&!S.won&&!document.hidden){S.elapsed++;$('tTime').textContent=fmt(S.elapsed);if(S.elapsed%5===0)persist()}},1000);
 
+function fitScreen(){
+  const b=document.body;
+  if(!window.navigator.standalone){b.style.height='';b.style.bottom='';return}
+  // iOS home-screen apps sometimes report a viewport shorter than the screen,
+  // leaving an empty strip at the bottom: stretch to the full screen height
+  const portrait=window.innerHeight>=window.innerWidth;
+  const full=portrait?Math.max(screen.width,screen.height):Math.min(screen.width,screen.height);
+  if(full>window.innerHeight+4){b.style.bottom='auto';b.style.height=full+'px'}
+  else{b.style.height='';b.style.bottom=''}
+}
 let relayoutTimers=[];
 function scheduleRelayout(){
   relayoutTimers.forEach(clearTimeout);
   // iOS reports the new size a little after the rotation, so measure a few times
-  relayoutTimers=[0,120,300,700].map(t=>setTimeout(()=>{if(drag)return;layout();render()},t));
+  relayoutTimers=[0,120,300,700].map(t=>setTimeout(()=>{if(drag)return;fitScreen();layout();render()},t));
 }
 window.addEventListener('resize',scheduleRelayout);
 window.addEventListener('orientationchange',scheduleRelayout);
@@ -852,7 +863,7 @@ const needLogin=!player;
 if(needLogin){show('ovName');setTimeout(()=>{try{$('inName').focus()}catch(e){}},300)}
 
 /* ---------- start ---------- */
-buildDom();layout();
+buildDom();fitScreen();layout();
 const saved=load('fc_game',null);
 if(saved&&saved.S&&saved.S.cols&&!saved.S.won){
   S=saved.S;undoStack=saved.undo||[];render();
