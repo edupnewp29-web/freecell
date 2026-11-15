@@ -140,9 +140,9 @@ nav button:disabled{opacity:.35}
 
 <div class="overlay" id="ovRules"><div class="panel">
   <h2>遊戲規則</h2>
-  <p><b>目標：</b>把 52 張牌依花色從 A 排到 K，全部收到右上角的 4 個收牌區。</p>
+  <p><b>目標：</b>把 52 張牌依花色從 A 排到 K，全部收到左上角的 4 個收牌區。</p>
   <ul>
-    <li><b>左上 4 格是暫存格</b>，每格放 1 張任意的牌。</li>
+    <li><b>右上 4 格是暫存格</b>，每格放 1 張任意的牌。</li>
     <li>下方 8 欄的牌，可以疊到<b>顏色相反、點數大 1</b> 的牌上（例如黑 7 疊在紅 8 上）。</li>
     <li>空欄可以放任何牌。</li>
     <li>一次可以移動一整串排好的牌，張數上限取決於空暫存格和空欄的數量。</li>
@@ -228,7 +228,7 @@ if (FIREBASE_CONFIG) {
 <script>
 (function(){
 'use strict';
-const APP_VERSION='v1.8', APP_DATE='2026-11-09';
+const APP_VERSION='v1.9', APP_DATE='2026-11-09';
 const SUITS=['♣','♦','♥','♠'];
 const RANKS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 const rank=id=>id>>2, suit=id=>id&3, red=id=>(id&3)===1||(id&3)===2;
@@ -427,7 +427,7 @@ function layout(){
   board.style.setProperty('--cw',cw+'px');
   board.style.setProperty('--ch',ch+'px');
   const x=i=>side+i*(cw+gap);
-  for(let i=0;i<4;i++){pos(slotEl['cell'+i],x(i),gap);pos(slotEl['found'+i],x(4+i),gap)}
+  for(let i=0;i<4;i++){pos(slotEl['found'+i],x(i),gap);pos(slotEl['cell'+i],x(4+i),gap)}
   for(let i=0;i<8;i++){const d=slotEl['col'+i];pos(d,x(i),L.y0);d.style.height=(H-L.y0)+'px'}
 }
 function pos(el,x,y){el.style.transform=`translate(${x}px,${y}px)`}
@@ -437,8 +437,8 @@ const P=[];
 function render(){
   const selIds=sel!==null&&loc(sel)?cardsAt(loc(sel)):[];
   S.cols.forEach((col,i)=>{const off=colOffset(col.length);col.forEach((id,k)=>{P[id]=[X(i),L.y0+k*off,10+k]})});
-  S.cells.forEach((id,i)=>{if(id!==null)P[id]=[X(i),L.gap,10]});
-  S.found.forEach((f,s)=>f.forEach((id,k)=>{P[id]=[X(4+s),L.gap,10+k]}));
+  S.cells.forEach((id,i)=>{if(id!==null)P[id]=[X(4+i),L.gap,10]});
+  S.found.forEach((f,s)=>f.forEach((id,k)=>{P[id]=[X(s),L.gap,10+k]}));
   for(let id=0;id<52;id++){
     const e=cardEl[id],p=P[id];
     e.style.transform=`translate(${p[0]}px,${p[1]}px)`;
@@ -511,7 +511,7 @@ function endDrag(e){
   const r={l:lr.left-br.left,t:lr.top-br.top,r:lr.right-br.left,b:lr.bottom-br.top};
   const px=e.clientX-br.left,py=e.clientY-br.top;
   const zones=[];
-  for(let i=0;i<4;i++){zones.push({dst:{t:'cell',i},x:X(i),y:L.gap,h:L.ch});zones.push({dst:{t:'found',i},x:X(4+i),y:L.gap,h:L.ch})}
+  for(let i=0;i<4;i++){zones.push({dst:{t:'found',i},x:X(i),y:L.gap,h:L.ch});zones.push({dst:{t:'cell',i},x:X(4+i),y:L.gap,h:L.ch})}
   for(let i=0;i<8;i++)zones.push({dst:{t:'col',i},x:X(i),y:L.y0,h:L.H-L.y0});
   const cand=[];
   for(const z of zones){
