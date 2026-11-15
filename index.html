@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="新接龍">
-<meta name="theme-color" content="#3a9e3f">
+<meta name="theme-color" content="#256b32">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
 <link rel="manifest" href="manifest.json">
@@ -15,7 +15,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden;overscroll-behavior:none;touch-action:none}
-body{background:#3a9e3f;font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;color:#fff;display:flex;flex-direction:column;position:fixed;top:0;left:0;right:0;bottom:0;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+body{background:radial-gradient(ellipse at 50% 30%,#2b7a39 0%,#22632e 60%,#1c5527 100%);font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;color:#fff;display:flex;flex-direction:column;position:fixed;top:0;left:0;right:0;bottom:0;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 header{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:calc(6px + env(safe-area-inset-top)) calc(10px + env(safe-area-inset-right)) 4px calc(10px + env(safe-area-inset-left));font-size:18px;flex-wrap:wrap;row-gap:2px;font-variant-numeric:tabular-nums;max-width:760px;width:100%;margin:0 auto}
 header .title{font-weight:700;font-size:22px;letter-spacing:1px}
 header .title small{font-weight:400;opacity:.85;font-size:16px;margin-left:4px}
@@ -27,8 +27,8 @@ header .stats span{font-weight:700;font-size:17px}
 .slot.cell,.slot.found{height:var(--ch);border:none;background:rgba(255,255,255,.14);box-shadow:inset 0 0 6px rgba(0,0,0,.18);border-radius:6px;display:flex;align-items:center;justify-content:center}
 .slot.found{color:rgba(255,255,255,.3);font-weight:700;font-size:calc(var(--cw)*.75);font-family:Arial,Helvetica,sans-serif}
 .slot.col::before{content:"";position:absolute;left:0;top:0;right:0;height:var(--ch);border-radius:6px;border:none;background:rgba(255,255,255,.08)}
-.card{position:absolute;left:0;top:0;width:var(--cw);height:var(--ch);border-radius:6px;background:#fff;border:1px solid #b9b9b9;box-shadow:0 1px 3px rgba(0,0,0,.35);color:#111;font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;transition:transform .2s ease,box-shadow .15s;will-change:transform;overflow:hidden}
-.card.red{color:#e8141c}
+.card{position:absolute;left:0;top:0;width:var(--cw);height:var(--ch);border-radius:6px;background:#fff;border:1px solid #9a9a9a;box-shadow:0 1px 3px rgba(0,0,0,.45);color:#000;font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;transition:transform .2s ease,box-shadow .15s;will-change:transform;overflow:hidden}
+.card.red{color:#ff0a24}
 .card .tl{position:absolute;z-index:2;left:calc(var(--cw)*.06);right:calc(var(--cw)*.06);top:calc(var(--cw)*.03);display:flex;align-items:center;justify-content:space-between;font-weight:700;line-height:1;font-size:calc(var(--cw)*.5);letter-spacing:-1px}
 .card .tl svg{width:calc(var(--cw)*.34);height:calc(var(--cw)*.34)}
 .card .tl.ten{font-size:calc(var(--cw)*.45);letter-spacing:-3px}
@@ -60,13 +60,13 @@ nav button:disabled{opacity:.35}
 .panel ul{padding-left:20px;margin:6px 0 10px}
 .panel .row{display:flex;gap:8px;margin-top:16px}
 .panel button{flex:1;padding:13px 8px;border-radius:12px;border:none;font-size:19px;font-weight:600;background:#e9ecef;color:#222;font-family:inherit;cursor:pointer}
-.panel button.primary{background:#3a9e3f;color:#fff}
+.panel button.primary{background:#256b32;color:#fff}
 .panel input[type=number]{width:100%;padding:12px;font-size:22px;border:1.5px solid #ccc;border-radius:10px;margin-top:6px}
 .menu-item{display:flex;justify-content:space-between;align-items:center;padding:15px 4px;border-bottom:1px solid #eee;font-size:21px;cursor:pointer}
 .menu-item:last-child{border-bottom:none}
 .switch{width:54px;height:32px;border-radius:16px;background:#ccc;position:relative;transition:.2s;flex-shrink:0}
 .switch::after{content:"";position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
-.switch.on{background:#3a9e3f}.switch.on::after{left:25px}
+.switch.on{background:#256b32}.switch.on::after{left:25px}
 .statgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .statgrid div{background:#eef7ef;border-radius:10px;padding:12px;text-align:center}
 .statgrid b{display:block;font-size:29px;color:#2f8f37}
@@ -75,7 +75,7 @@ nav button:disabled{opacity:.35}
 .win .big{text-align:center;font-size:48px}
 .tabs{display:flex;gap:6px;margin-bottom:10px}
 .tabs button{flex:1;padding:10px 2px;border-radius:999px;border:none;background:#eef0f2;font-size:17px;font-weight:600;font-family:inherit}
-.tabs button.on{background:#3a9e3f;color:#fff}
+.tabs button.on{background:#256b32;color:#fff}
 .hero{display:flex;align-items:center;gap:10px;padding:12px 6px;border-bottom:1px solid #f0f0f0;font-size:21px}
 .hero .rk{width:34px;text-align:center;font-size:24px;font-weight:700;color:#999}
 .hero .nm{flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -105,7 +105,7 @@ nav button:disabled{opacity:.35}
   <button id="bMenu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>選單</button>
 </nav>
 
-<div class="overlay" id="ovName" style="background:#3a9e3f"><div class="panel">
+<div class="overlay" id="ovName" style="background:#256b32"><div class="panel">
   <h2>🃏 歡迎來玩新接龍</h2>
   <p>請輸入你的遊戲名稱，英雄榜和線上玩家都會用這個名字。只要輸入一次，下次打開就會自動登入。</p>
   <div class="namebox"><input id="inName" maxlength="12" placeholder="遊戲名稱（最多 12 個字）" autocomplete="nickname"><button class="primary" id="bName">開始玩</button></div>
@@ -228,7 +228,7 @@ if (FIREBASE_CONFIG) {
 <script>
 (function(){
 'use strict';
-const APP_VERSION='v1.9', APP_DATE='2026-11-09';
+const APP_VERSION='v2.0', APP_DATE='2026-11-09';
 const SUITS=['♣','♦','♥','♠'];
 const RANKS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 const rank=id=>id>>2, suit=id=>id&3, red=id=>(id&3)===1||(id&3)===2;
@@ -786,7 +786,16 @@ updatePlayerLabel();
 /* timer */
 setInterval(()=>{if(S&&S.started&&!S.won&&!document.hidden){S.elapsed++;$('tTime').textContent=fmt(S.elapsed);if(S.elapsed%5===0)persist()}},1000);
 
-window.addEventListener('resize',()=>{layout();render()});
+let relayoutTimers=[];
+function scheduleRelayout(){
+  relayoutTimers.forEach(clearTimeout);
+  // iOS reports the new size a little after the rotation, so measure a few times
+  relayoutTimers=[0,120,300,700].map(t=>setTimeout(()=>{if(drag)return;layout();render()},t));
+}
+window.addEventListener('resize',scheduleRelayout);
+window.addEventListener('orientationchange',scheduleRelayout);
+if(window.visualViewport)window.visualViewport.addEventListener('resize',scheduleRelayout);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)scheduleRelayout()});
 
 $('verLabel').textContent=APP_VERSION+'（'+APP_DATE+'）';
 /* ---------- online presence ---------- */
