@@ -15,6 +15,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{background:#173f20}
+body.short-vp nav{padding-bottom:8px}
 html,body{height:100%;overflow:hidden;overscroll-behavior:none;touch-action:none}
 body{background:radial-gradient(ellipse at 50% 30%,#2b7a39 0%,#22632e 60%,#1c5527 100%);font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;color:#fff;display:flex;flex-direction:column;position:fixed;top:0;left:0;right:0;bottom:0;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 header{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:calc(6px + env(safe-area-inset-top)) calc(10px + env(safe-area-inset-right)) 4px calc(10px + env(safe-area-inset-left));font-size:18px;flex-wrap:wrap;row-gap:2px;font-variant-numeric:tabular-nums;max-width:760px;width:100%;margin:0 auto}
@@ -46,7 +47,7 @@ header .stats span{font-weight:700;font-size:17px}
 @keyframes hint{to{box-shadow:0 0 0 4px #4de1ff,0 0 18px 4px #9ef0ff}}
 .nope{animation:nope .35s}
 @keyframes nope{50%{filter:brightness(.75) sepia(.6) hue-rotate(-30deg) saturate(3)}}
-nav{display:flex;justify-content:space-around;flex-shrink:0;position:relative;z-index:3000;padding:8px 4px max(10px, env(safe-area-inset-bottom));background:rgba(0,0,0,.25);width:100%}
+nav{display:flex;justify-content:space-around;flex-shrink:0;position:relative;z-index:3000;padding:8px 4px max(10px, env(safe-area-inset-bottom));background:#173f20;width:100%}
 nav button{background:none;border:none;color:#fff;font-size:16px;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:56px;padding:4px 6px;border-radius:10px;font-family:inherit;cursor:pointer}
 nav button{font-weight:600}
 nav button svg{width:48px;height:48px;padding:10px;border-radius:14px;box-shadow:0 3px 0 rgba(0,0,0,.25);transition:transform .1s}
@@ -229,7 +230,7 @@ if (FIREBASE_CONFIG) {
 <script>
 (function(){
 'use strict';
-const APP_VERSION='v2.2', APP_DATE='2026-11-09';
+const APP_VERSION='v2.3', APP_DATE='2026-11-09';
 const SUITS=['♣','♦','♥','♠'];
 const RANKS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 const rank=id=>id>>2, suit=id=>id&3, red=id=>(id&3)===1||(id&3)===2;
@@ -788,14 +789,15 @@ updatePlayerLabel();
 setInterval(()=>{if(S&&S.started&&!S.won&&!document.hidden){S.elapsed++;$('tTime').textContent=fmt(S.elapsed);if(S.elapsed%5===0)persist()}},1000);
 
 function fitScreen(){
-  const b=document.body;
-  if(!window.navigator.standalone){b.style.height='';b.style.bottom='';return}
-  // iOS home-screen apps sometimes report a viewport shorter than the screen,
-  // leaving an empty strip at the bottom: stretch to the full screen height
-  const portrait=window.innerHeight>=window.innerWidth;
-  const full=portrait?Math.max(screen.width,screen.height):Math.min(screen.width,screen.height);
-  if(full>window.innerHeight+4){b.style.bottom='auto';b.style.height=full+'px'}
-  else{b.style.height='';b.style.bottom=''}
+  // When iOS gives a home-screen app a viewport shorter than the screen, the strip
+  // below it is painted with the html background (same colour as the bar), so the
+  // bar just needs less bottom padding there; never stretch past the viewport.
+  const short=!!window.navigator.standalone&&(()=>{
+    const portrait=window.innerHeight>=window.innerWidth;
+    const full=portrait?Math.max(screen.width,screen.height):Math.min(screen.width,screen.height);
+    return full>window.innerHeight+4;
+  })();
+  document.body.classList.toggle('short-vp',short);
 }
 let relayoutTimers=[];
 function scheduleRelayout(){
