@@ -229,7 +229,7 @@ if (FIREBASE_CONFIG) {
 <script>
 (function(){
 'use strict';
-const APP_VERSION='v2.1', APP_DATE='2026-11-09';
+const APP_VERSION='v2.2', APP_DATE='2026-11-09';
 const SUITS=['♣','♦','♥','♠'];
 const RANKS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 const rank=id=>id>>2, suit=id=>id&3, red=id=>(id&3)===1||(id&3)===2;
@@ -891,6 +891,25 @@ async function mergeAllOld(){
 }
 function mergeOnStart(){mergeAllOld().catch(e=>console.warn(e)).finally(()=>{if(player&&onl())ensureHero(player).catch(e=>console.warn(e))})}
 if(onl())mergeOnStart();else window.addEventListener('online-ready',mergeOnStart,{once:true});
+/* ---------- auto update: compare with version.json on the server ---------- */
+async function checkUpdate(){
+  try{
+    if(busy||drag)return;
+    const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'});
+    if(!r.ok)return;
+    const j=await r.json();
+    if(!j.version||j.version===APP_VERSION)return;
+    let tried='';try{tried=sessionStorage.getItem('fc_upd')||''}catch(e){}
+    if(tried===j.version)return; // already tried this version once in this session
+    try{sessionStorage.setItem('fc_upd',j.version)}catch(e){}
+    persist();
+    toast('發現新版本 '+j.version+'，更新中…');
+    setTimeout(()=>location.replace(location.pathname+'?v='+encodeURIComponent(j.version)),900);
+  }catch(e){}
+}
+setTimeout(checkUpdate,2500);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(checkUpdate,800)});
+setInterval(()=>{if(!document.hidden)checkUpdate()},10*60*1000);
 window.__fc={get S(){return S},plan,apply,findHint,smart,dealCols,loc};
 })();
 </script>
